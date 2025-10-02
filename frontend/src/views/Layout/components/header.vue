@@ -7,13 +7,14 @@
           <el-icon>
             <Menu />
           </el-icon>
-          若林轻小说后台管理系统
+          <span >若林后台</span>
         </h1>
       </div>
 
       <!-- 右侧面包屑和用户信息 -->
       <div class="header-right">
-        <el-breadcrumb separator="/" class="breadcrumb">
+        <!-- 只在非移动端显示面包屑 -->
+        <el-breadcrumb v-if="!isMobile" separator="/" class="breadcrumb">
           <el-breadcrumb-item v-for="item in breadcrumbItems" :key="item.path" :to="{ path: item.path }">
             {{ item.meta.title }}
           </el-breadcrumb-item>
@@ -25,10 +26,12 @@
             <el-avatar :size="32" class="user-avatar">
               {{ (userInfo.username || userInfo.email || '用户').charAt(0).toUpperCase() }}
             </el-avatar>
-            <span class="user-name">
+            <!-- 只在非移动端显示用户名 -->
+            <span v-if="!isMobile" class="user-name">
               {{ userInfo.username || userInfo.email || '用户' }}
             </span>
-            <el-icon class="el-icon--right">
+            <!-- 只在非移动端显示下拉箭头 -->
+            <el-icon v-if="!isMobile" class="el-icon--right">
               <ArrowDown />
             </el-icon>
           </div>
@@ -59,7 +62,9 @@ import {
   Menu,
   ArrowDown,
   User,
-  Setting
+  Setting,
+  Expand,
+  Fold
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -96,11 +101,24 @@ defineProps({
   userInfo: {
     type: Object,
     default: null
+  },
+  // 新增 props
+  isMobile: {
+    type: Boolean,
+    default: false
+  },
+  isCollapsed: {
+    type: Boolean,
+    default: false
   }
 })
 
 // 定义组件发出的事件
 const emit = defineEmits(['logout', 'toggleAside'])
+
+const handleToggleAside = () => {
+  emit('toggleAside')
+}
 
 // 点击标题触发侧边栏折叠/展开
 const handleTitleClick = () => {
@@ -142,6 +160,9 @@ const handleTitleClick = () => {
   z-index: 100;
   padding: 5px 10px;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .system-title:hover {

@@ -2,10 +2,11 @@
   <div class="common-layout">
     <el-container class="main-container">
       <el-header height="60px">
-        <HeaderComponent :userInfo="userInfo" @logout="handleLogout" @toggleAside="toggleAside" />
+        <HeaderComponent :userInfo="userInfo" :is-mobile="isMobile" :is-collapsed="isAsideCollapsed"
+          @logout="handleLogout" @toggleAside="toggleAside" />
       </el-header>
       <el-container class="body-container">
-        <Aside :collapsed="isAsideCollapsed" />
+        <Aside :collapsed="isAsideCollapsed" :is-mobile="isMobile" />
         <el-main class="scrollable-content">
           <router-view />
         </el-main>
@@ -15,7 +16,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
 import { useRouter } from 'vue-router'
@@ -52,6 +53,32 @@ const handleLogout = async () => {
     console.error('Logout error:', error)
   }
 }
+
+// 响应式
+const isMobile = ref(false)
+const MOBILE_BREAKPOINT = 768
+
+const checkIsMobile = () => {
+  isMobile.value = window.innerWidth < MOBILE_BREAKPOINT
+  // 在移动端，默认折叠侧边栏
+  if (isMobile.value) {
+    isAsideCollapsed.value = true
+  }
+}
+
+onMounted(() => {
+  if (userStore.isLoggedIn && userStore.userInfo) {
+    userInfo.value = userStore.userInfo
+  }
+  // 组件挂载时检查一次
+  checkIsMobile()
+  // 添加窗口大小变化监听
+  window.addEventListener('resize', checkIsMobile)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkIsMobile)
+})
 </script>
 
 <style scoped>
