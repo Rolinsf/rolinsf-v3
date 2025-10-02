@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { authApi } from '@/api'
+import { ROLE_PERMISSIONS } from '@/utils/permissions'
 
 export const useUserStore = defineStore('user', {
   // 持久化配置
@@ -26,10 +27,42 @@ export const useUserStore = defineStore('user', {
     // 获取用户角色
     userRole: (state) => state.userInfo?.role,
     
+    // 获取用户权限列表
+    userPermissions: (state) => state.userInfo?.permissions || [],
+    
+    // 判断是否为管理员
+    isAdmin: (state) => state.userInfo?.role === 'admin',
+    
     // 判断是否有权限
     hasPermission: (state) => (permission) => {
-      // 这里可以根据实际需求实现权限判断逻辑
-      return true
+      // 管理员拥有所有权限
+      if (state.userInfo?.role === 'admin') {
+        return true
+      }
+      
+      // 检查是否拥有特定权限
+      if (state.userInfo?.permissions && Array.isArray(state.userInfo.permissions)) {
+        return state.userInfo.permissions.includes(permission)
+      }
+      
+      // 默认为没有权限
+      return false
+    },
+    
+    // 判断是否拥有多个权限中的任意一个
+    hasAnyPermission: (state) => (permissions) => {
+      // 管理员拥有所有权限
+      if (state.userInfo?.role === 'admin') {
+        return true
+      }
+      
+      // 检查是否拥有任意一个指定权限
+      if (state.userInfo?.permissions && Array.isArray(state.userInfo.permissions)) {
+        return permissions.some(permission => state.userInfo.permissions.includes(permission))
+      }
+      
+      // 默认为没有权限
+      return false
     }
   },
   
@@ -43,6 +76,11 @@ export const useUserStore = defineStore('user', {
     
     // 设置用户信息
     setUserInfo(userInfo) {
+      // 如果有用户信息且有角色，根据角色分配权限
+      if (userInfo && userInfo.role && ROLE_PERMISSIONS[userInfo.role]) {
+        // 将角色对应的权限添加到用户信息中
+        userInfo.permissions = ROLE_PERMISSIONS[userInfo.role]
+      }
       this.userInfo = userInfo
     },
     
@@ -143,6 +181,18 @@ export const useUserStore = defineStore('user', {
       // 如果有token但用户信息为null，尝试刷新用户信息
       if (this.token && !this.userInfo) {
         this.refreshUserInfo()
+      }
+      
+      // 添加模拟数据，确保开发环境下可以访问所有功能
+      if (!this.isLoggedIn && process.env.NODE_ENV === 'development') {
+        console.log('开发环境：使用模拟数据')
+        this.setToken('mock-token')
+        this.setUserInfo({
+          id: 1,
+          username: 'admin',
+          role: 'admin',
+          permissions: ['system:access', 'system:user:manage', 'system:role:manage']
+        })
       }
       
       return this.isLoggedIn

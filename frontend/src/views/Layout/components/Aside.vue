@@ -24,6 +24,12 @@
             </el-icon>
             <span>个人信息</span>
           </el-menu-item>
+          <el-menu-item index="/admin/user/my-novels">
+            <el-icon>
+              <Reading />
+            </el-icon>
+            <span>我的小说</span>
+          </el-menu-item>
           <el-menu-item index="/admin/user/private-messages">
             <el-icon>
               <Message />
@@ -75,10 +81,18 @@
           </template>
           <el-menu-item index="/admin/system/user-management">
             <el-icon>
-              <Lock />
+              <User />
             </el-icon>
             <span>用户管理</span>
           </el-menu-item>
+
+          <el-menu-item index="/admin/system/role-permission">
+            <el-icon>
+              <Lock />
+            </el-icon>
+            <span>角色权限管理</span>
+          </el-menu-item>
+
           <el-menu-item index="/admin/system/system-log">
             <el-icon>
               <Files />
@@ -90,7 +104,6 @@
               <Setting />
             </el-icon>
             <span>系统设置</span>
-
           </el-menu-item>
         </el-sub-menu>
 
@@ -100,7 +113,7 @@
 </template>
 
 <script setup>
-import { Files, Lock, Notebook, UserFilled, User } from '@element-plus/icons-vue';
+import { Files, Lock, Notebook, UserFilled, User, HomeFilled, Message, ChatDotSquare, Document, PieChart, Setting } from '@element-plus/icons-vue';
 // 接收折叠状态属性
 defineProps({
   collapsed: {

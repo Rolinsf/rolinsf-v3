@@ -15,9 +15,13 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 // 导入Element Plus图标
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
+// 导入权限指令
+import permissionDirective from './directives/permission'
+
 const app = createApp(App)
     
 // 在这个位置挂载插件
+app.use(permissionDirective)
 
 // 全局注册Element Plus图标
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
