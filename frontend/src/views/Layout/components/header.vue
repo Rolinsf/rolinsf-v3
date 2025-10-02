@@ -4,19 +4,21 @@
       <!-- 左侧Logo和标题 -->
       <div class="header-left">
         <h1 class="system-title" @click="handleTitleClick">
-            <el-icon ><Menu /></el-icon>
-            若林轻小说后台管理系统
+          <el-icon>
+            <Menu />
+          </el-icon>
+          若林轻小说后台管理系统
         </h1>
       </div>
-      
+
       <!-- 右侧面包屑和用户信息 -->
       <div class="header-right">
-        <!-- 面包屑导航 -->
-        <!-- <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">
-          <el-breadcrumb-item>首页</el-breadcrumb-item>
-          <el-breadcrumb-item>后台管理</el-breadcrumb-item>
-        </el-breadcrumb> -->
-        
+        <el-breadcrumb separator="/" class="breadcrumb">
+          <el-breadcrumb-item v-for="item in breadcrumbItems" :key="item.path" :to="{ path: item.path }">
+            {{ item.meta.title }}
+          </el-breadcrumb-item>
+        </el-breadcrumb>
+
         <!-- 用户信息下拉菜单 -->
         <el-dropdown v-if="userInfo" class="user-dropdown">
           <div class="user-info" @click.stop>
@@ -26,17 +28,17 @@
             <span class="user-name">
               {{ userInfo.username || userInfo.email || '用户' }}
             </span>
-            <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            <el-icon class="el-icon--right">
+              <ArrowDown />
+            </el-icon>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item>
-                <el-icon><User /></el-icon>
+              <el-dropdown-item index="/admin/user-info" @click="$router.push('/admin/user-info')">
+                <el-icon>
+                  <User />
+                </el-icon>
                 <span>个人中心</span>
-              </el-dropdown-item>
-              <el-dropdown-item>
-                <el-icon><Setting /></el-icon>
-                <span>设置</span>
               </el-dropdown-item>
               <el-dropdown-item divided @click="$emit('logout')">
                 <span>退出登录</span>
@@ -51,12 +53,43 @@
 
 <script setup>
 import { defineProps, defineEmits } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   Menu,
   ArrowDown,
   User,
   Setting
 } from '@element-plus/icons-vue'
+
+const route = useRoute()
+const breadcrumbItems = ref([])
+
+// 生成面包屑的函数
+const getBreadcrumbs = () => {
+  // route.matched 是一个数组，包含当前路由的所有嵌套路径片段的路由记录
+  const matched = route.matched.filter(item => item.meta && item.meta.title)
+
+  // 如果第一个不是首页，可以手动添加一个
+  const first = matched[0]
+  if (first && first.path !== '/admin') {
+    // 这里可以根据你的首页路由进行调整
+    breadcrumbItems.value = [{ path: '/admin', meta: { title: '首页' } }].concat(matched)
+  } else {
+    breadcrumbItems.value = matched
+  }
+}
+
+// 监听路由变化，并重新生成面包屑
+watch(() => route.path, () => {
+  getBreadcrumbs()
+})
+
+// 组件挂载时也生成一次面包屑
+onMounted(() => {
+  getBreadcrumbs()
+})
+
 
 // 定义组件接收的props
 defineProps({

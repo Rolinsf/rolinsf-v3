@@ -22,7 +22,88 @@ const router = createRouter({
       {path: '/', component: home},
 
         // 后台主页的路由规则
-        {path: '/admin', component: Layout}
+        {
+          path: '/admin', 
+          component: Layout,
+          redirect: '/admin/dashboard',
+          meta: { title: '首页' },
+          children: [
+            {
+              path: 'dashboard', 
+              component: () => import('../views/Layout/components/Dashboard/index.vue'),
+              meta: { title: '仪表盘' }
+            },
+            // 系统管理
+            {
+              path: 'system',
+              redirect: '/admin/system/user-management',
+              meta: { title: '系统管理' },
+              children: [
+                {
+                  path: 'user-management', 
+                  component: () => import('../views/Layout/components/SystemManagement/UserManagement/index.vue'),
+                  meta: { title: '用户管理' }
+                },
+                {
+                  path: 'system-log',
+                  component: () => import('../views/Layout/components/SystemManagement/SystemLog/index.vue'),
+                  meta: { title: '系统日志' }
+                },
+                {
+                  path: 'system-settings',
+                  component: () => import('../views/Layout/components/SystemManagement/SystemSettings/index.vue'),
+                  meta: { title: '系统设置' }
+                },
+              ]
+            },
+            // 小说管理
+            {
+              path: 'novel',
+              redirect: '/admin/novel/novel-list',
+              meta: { title: '小说管理' },
+              children: [
+                {
+                  path: 'novel-list',
+                  component: () => import('../views/Layout/components/NovelManagement/NovelList/index.vue'),
+                  meta: { title: '小说列表' }
+                },
+                {
+                  path: 'comment-management',
+                  component: () => import('../views/Layout/components/NovelManagement/CommentManagement/index.vue'),
+                  meta: { title: '评论管理' }
+                },
+                {
+                  path: 'data-statistics',
+                  component: () => import('../views/Layout/components/NovelManagement/DataStatistics/index.vue'),
+                  meta: { title: '数据统计' }
+                },
+              ]
+            },
+            // 个人中心
+            {
+              path: 'user',
+              redirect: '/admin/user/user-info',
+              meta: { title: '个人中心' },
+              children: [
+                {
+                  path: 'user-info',
+                  component: () => import('../views/Layout/components/UserManagement/UserInfo/index.vue'),
+                  meta: { title: '用户信息' }
+                },
+                {
+                  path: 'private-messages',
+                  component: () => import('../views/Layout/components/UserManagement/PrivateMessages/index.vue'),
+                  meta: { title: '私信' }
+                },
+                {
+                  path: 'view-history',
+                  component: () => import('../views/Layout/components/UserManagement/ViewHistory/index.vue'),
+                  meta: {title: '浏览历史' }
+                }
+              ]
+            }
+          ]
+        }
     ]
 })
 

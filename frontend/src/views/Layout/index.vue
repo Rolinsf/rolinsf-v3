@@ -6,7 +6,9 @@
       </el-header>
       <el-container class="body-container">
         <Aside :collapsed="isAsideCollapsed" />
-        <el-main class="scrollable-content">Main</el-main>
+        <el-main class="scrollable-content">
+          <router-view />
+        </el-main>
       </el-container>
     </el-container>
   </div>
