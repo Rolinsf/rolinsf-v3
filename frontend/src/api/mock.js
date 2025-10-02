@@ -2,7 +2,7 @@
 // 当后端未实现时，提供模拟数据响应
 
 /**
- * Mock数据配置
+ * 模拟数据配置 - 按业务模块组织
  */
 const mockData = {
   // 用户协议数据
@@ -227,4 +227,9 @@ const mockDelay = (delay = 300) => {
   return new Promise(resolve => setTimeout(resolve, delay));
 };
 
-export { mockData, mockResponse, mockDelay };
+// 从环境变量判断是否启用mock数据
+const isMockEnabled = () => {
+  return import.meta.env.VITE_USE_MOCK === 'true' || import.meta.env.VITE_USE_MOCK === undefined;
+};
+
+export { mockData, mockResponse, mockDelay, isMockEnabled };

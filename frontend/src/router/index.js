@@ -40,7 +40,7 @@ const router = createRouter({
               meta: { title: '系统管理' },
               children: [
                 {
-                  path: 'user-management', 
+                  path: 'user-management',
                   component: () => import('../views/Layout/components/SystemManagement/UserManagement/index.vue'),
                   meta: { title: '用户管理' }
                 },

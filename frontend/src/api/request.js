@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-import { mockData, mockResponse, mockDelay } from './mock.js';
+import { mockData, mockResponse, mockDelay, isMockEnabled } from './mock.js';
 
-// 模拟模式开关 - 当没有对接后台时设为true
-const MOCK_MODE = true;
+// 使用辅助函数判断是否启用模拟模式
+const MOCK_MODE = isMockEnabled();
 
 // 创建axios实例
 const request = axios.create({
@@ -19,6 +19,9 @@ const request = axios.create({
  * 根据请求URL和方法返回对应的模拟数据
  */
 const mockRequestHandler = async (config) => {
+  // 记录请求日志，方便调试
+  console.log('Mock API Call:', config.method.toUpperCase(), config.url, config.data);
+  
   await mockDelay(); // 模拟网络延迟
   
   const url = config.url;
@@ -139,6 +142,109 @@ const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.
     
     return Promise.resolve({
       data: mockResponse(userInfo)
+    });
+  }
+  
+  // 处理用户管理相关的mock请求
+  else if (url === '/system/users' && method === 'get') {
+    // 获取用户列表
+    const { page = 1, pageSize = 10, keyword, role } = config.params || {};
+    
+    // 模拟用户列表数据
+    const mockUsers = [
+      { id: '1', username: 'admin', email: 'admin@example.com', roles: ['admin', 'user'], status: true },
+      { id: '2', username: 'testuser', email: 'test@example.com', roles: ['user'], status: true },
+      { id: '3', username: 'user1', email: 'user1@example.com', roles: ['user'], status: true },
+      { id: '4', username: 'user2', email: 'user2@example.com', roles: ['user'], status: false },
+      { id: '5', username: 'editor', email: 'editor@example.com', roles: ['editor', 'user'], status: true }
+    ];
+    
+    // 过滤数据
+    let filteredUsers = [...mockUsers];
+    if (keyword) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.username.toLowerCase().includes(keyword.toLowerCase()) ||
+        user.email.toLowerCase().includes(keyword.toLowerCase())
+      );
+    }
+    if (role) {
+      filteredUsers = filteredUsers.filter(user => user.roles.includes(role));
+    }
+    
+    // 分页
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    const paginatedUsers = filteredUsers.slice(start, end);
+    
+    return Promise.resolve({
+      data: mockResponse({
+        list: paginatedUsers,
+        total: filteredUsers.length,
+        page: parseInt(page),
+        pageSize: parseInt(pageSize)
+      })
+    });
+  }
+  else if (url.match(/^\/system\/users\/[^\/]+$/) && method === 'get') {
+    // 获取用户详情
+    const userId = url.split('/').pop();
+    const mockUser = {
+      id: userId,
+      username: `user${userId}`,
+      email: `user${userId}@example.com`,
+      roles: ['user'],
+      status: true,
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    };
+    
+    return Promise.resolve({
+      data: mockResponse(mockUser)
+    });
+  }
+  else if (url === '/system/users' && method === 'post') {
+    // 创建新用户
+    return Promise.resolve({
+      data: mockResponse({
+        id: Date.now().toString(),
+        ...data,
+        createdAt: new Date().toISOString()
+      })
+    });
+  }
+  else if (url.match(/^\/system\/users\/[^\/]+$/) && method === 'put') {
+    // 更新用户信息
+    const userId = url.split('/').pop();
+    return Promise.resolve({
+      data: mockResponse({
+        id: userId,
+        ...data,
+        updatedAt: new Date().toISOString()
+      })
+    });
+  }
+  else if (url.match(/^\/system\/users\/[^\/]+$/) && method === 'delete') {
+    // 删除用户
+    return Promise.resolve({
+      data: mockResponse({ success: true })
+    });
+  }
+  else if (url === '/system/users/batch-delete' && method === 'post') {
+    // 批量删除用户
+    return Promise.resolve({
+      data: mockResponse({ success: true, deletedCount: data.ids.length })
+    });
+  }
+  else if (url.includes('/status') && method === 'patch') {
+    // 修改用户状态
+    return Promise.resolve({
+      data: mockResponse({ success: true, status: data.active })
+    });
+  }
+  else if (url.includes('/reset-password') && method === 'post') {
+    // 重置用户密码
+    return Promise.resolve({
+      data: mockResponse({ success: true })
     });
   }
   

@@ -3,7 +3,7 @@
     :style="{ transform: collapsed ? '-translateX(100%)' : 'translateX(0)' }">
     <div class="menu-wrapper">
       <el-menu class="aside-menu" background-color="#fff" text-color="#333" active-text-color="#1890ff"
-        default-active="1" router="true">
+        default-active="1" :router="true">
         <el-menu-item index="/admin">
           <el-icon>
             <HomeFilled />
@@ -22,7 +22,7 @@
             <el-icon>
               <User />
             </el-icon>
-            <span>用户信息</span>
+            <span>个人信息</span>
           </el-menu-item>
           <el-menu-item index="/admin/user/private-messages">
             <el-icon>
@@ -100,8 +100,7 @@
 </template>
 
 <script setup>
-import { Files, Lock, Notebook, UserFilled } from '@element-plus/icons-vue';
-
+import { Files, Lock, Notebook, UserFilled, User } from '@element-plus/icons-vue';
 // 接收折叠状态属性
 defineProps({
   collapsed: {
