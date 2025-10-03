@@ -1,9 +1,10 @@
 <!-- 个人信息组件 -->
 <template>
   <div class="profile-info">
-    <!-- 头像部分 -->
-    <div class="avatar-section">
-      <div class="avatar-container">
+    <!-- 主体内容容器 -->
+    <div class="profile-content">
+      <!-- 头像区域 -->
+      <div class="avatar-wrapper">
         <el-avatar 
           size="120" 
           :src="userInfo.avatar || defaultAvatar" 
@@ -12,12 +13,7 @@
           {{ getUserInitial(userInfo.username) }}
         </el-avatar>
         
-        <!-- 验证徽章 -->
-        <div v-if="userInfo.isVerified" class="verification-badge">
-          <el-icon><Check /></el-icon>
-        </div>
-        
-        <!-- 头像编辑按钮 -->
+        <!-- 编辑头像按钮 -->
         <el-button 
           v-if="canEdit" 
           size="small" 
@@ -27,95 +23,83 @@
           <el-icon><Edit /></el-icon>
         </el-button>
       </div>
-    </div>
-    
-    <!-- 用户基本信息 -->
-    <div class="user-details">
-      <div class="username-row">
-        <h1 class="username">{{ userInfo.username }}</h1>
-        <el-tag v-if="userInfo.vipLevel > 0" type="primary" class="vip-tag">
-          VIP{{ userInfo.vipLevel }}
-        </el-tag>
-        <el-button 
-          v-if="canEdit" 
-          size="small" 
-          class="edit-name-btn"
-          @click="triggerNameEdit"
-        >
-          <el-icon><Edit /></el-icon>
-        </el-button>
-      </div>
       
-      <!-- 关注/粉丝/获赞统计 -->
-      <div class="stats-section">
-        <div class="stat-item" @click="handleFollowingClick">
-          <span class="stat-value">{{ stats.following }}</span>
-          <span class="stat-label">关注</span>
+      <!-- 用户信息区域 -->
+      <div class="user-details">
+        <!-- 用户名和编辑按钮 -->
+        <div class="username-row">
+          <h1 class="username">{{ userInfo.username }}</h1>
+          
+          <!-- 编辑用户名按钮 -->
+          <el-button 
+            v-if="canEdit" 
+            size="small" 
+            class="edit-name-btn"
+            @click="triggerNameEdit"
+          >
+            <el-icon><Edit /></el-icon>
+          </el-button>
         </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item" @click="handleFollowersClick">
-          <span class="stat-value">{{ stats.followers }}</span>
-          <span class="stat-label">粉丝</span>
+        
+        <!-- 关注/粉丝/获赞统计 -->
+        <div class="stats-section">
+          <div class="stat-item" @click="handleFollowingClick">
+            <span class="stat-value">{{ stats.following }}</span>
+            <span class="stat-label">关注</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item" @click="handleFollowersClick">
+            <span class="stat-value">{{ stats.followers }}</span>
+            <span class="stat-label">粉丝</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item" @click="handleLikesClick">
+            <span class="stat-value">{{ stats.likes }}</span>
+            <span class="stat-label">获赞与收藏</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.views }}</span>
+            <span class="stat-label">视频播放</span>
+          </div>
         </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item" @click="handleLikesClick">
-          <span class="stat-value">{{ stats.likes }}</span>
-          <span class="stat-label">获赞与收藏</span>
+        
+        <!-- 个人签名 -->
+        <div class="user-signature" @click="triggerBioEdit" v-if="canEdit">
+          {{ userInfo.bio || '点击添加个人签名' }}
         </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-value">{{ stats.views }}</span>
-          <span class="stat-label">视频播放</span>
+        <div class="user-signature" v-else>
+          {{ userInfo.bio || '该用户还没有填写个人签名' }}
+        </div>
+        
+        <!-- 用户标签 -->
+        <div class="user-tags">
+          <el-tag 
+            v-for="tag in userTags" 
+            :key="tag" 
+            class="user-tag"
+          >
+            {{ tag }}
+          </el-tag>
+          <el-button 
+            v-if="canEdit && userTags.length < 8" 
+            size="small" 
+            type="dashed" 
+            class="add-tag-btn"
+            @click="triggerAddTag"
+          >
+            <el-icon><Plus /></el-icon>
+            添加标签
+          </el-button>
         </div>
       </div>
-      
-      <!-- 个人签名 -->
-      <div class="user-signature" @click="triggerBioEdit" v-if="canEdit">
-        {{ userInfo.bio || '点击添加个人签名' }}
-      </div>
-      <div class="user-signature" v-else>
-        {{ userInfo.bio || '该用户还没有填写个人签名' }}
-      </div>
-      
-      <!-- 用户标签 -->
-      <div class="user-tags">
-        <el-tag 
-          v-for="tag in userTags" 
-          :key="tag" 
-          class="user-tag"
-        >
-          {{ tag }}
-        </el-tag>
-        <el-button 
-          v-if="canEdit && userTags.length < 8" 
-          size="small" 
-          type="dashed" 
-          class="add-tag-btn"
-          @click="triggerAddTag"
-        >
-          <el-icon><Plus /></el-icon>
-          添加标签
-        </el-button>
-      </div>
-    </div>
-    
-    <!-- 右侧关注与私信 -->
-    <div class="right-actions" v-if="!canEdit">
-      <el-button type="primary" class="action-btn follow-btn" @click="handleFollow">
-        <el-icon><Plus /></el-icon>
-        {{ isFollowing ? '已关注' : '关注' }}
-      </el-button>
-      <el-button class="action-btn message-btn" @click="handleMessage">
-        <el-icon><ChatDotSquare /></el-icon>
-        私信
-      </el-button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { Check, Edit, Plus, ChatDotSquare } from '@element-plus/icons-vue'
+import { Check, Edit, Plus } from '@element-plus/icons-vue'
 
 const props = defineProps({
   // 用户信息
@@ -138,15 +122,15 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
-  // 是否关注状态
-  isFollowing: {
-    type: Boolean,
-    default: false
-  },
   // 是否可编辑
   canEdit: {
     type: Boolean,
     default: true
+  },
+  // 背景图URL
+  backgroundImage: {
+    type: String,
+    default: ''
   }
 })
 
@@ -155,11 +139,10 @@ const emit = defineEmits([
   'nameEdit',
   'bioEdit',
   'addTag',
-  'follow',
-  'message',
   'followingClick',
   'followersClick',
-  'likesClick'
+  'likesClick',
+  'bgChange'
 ])
 
 // 默认头像
@@ -181,6 +164,11 @@ const triggerNameEdit = () => {
   emit('nameEdit')
 }
 
+// 触发背景图更改
+const triggerBgChange = () => {
+  emit('bgChange')
+}
+
 // 触发签名编辑
 const triggerBioEdit = () => {
   emit('bioEdit')
@@ -189,16 +177,6 @@ const triggerBioEdit = () => {
 // 触发添加标签
 const triggerAddTag = () => {
   emit('addTag')
-}
-
-// 处理关注按钮点击
-const handleFollow = () => {
-  emit('follow')
-}
-
-// 处理私信按钮点击
-const handleMessage = () => {
-  emit('message')
 }
 
 // 处理关注统计点击
@@ -219,8 +197,6 @@ const handleLikesClick = () => {
 
 <style scoped>
 .profile-info {
-  display: flex;
-  gap: 20px;
   padding: 20px;
   background-color: #fff;
   border-bottom: 1px solid #eee;
@@ -230,14 +206,36 @@ const handleLikesClick = () => {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
-.avatar-section {
-  position: relative;
-  margin-top: -60px;
-  flex-shrink: 0;
+/* 主体内容容器 */
+.profile-content {
+  display: flex;
+  gap: 20px;
+  align-items: center; /* 修改为居中对齐 */
 }
 
-.avatar-container {
+/* 背景图编辑按钮 */
+.edit-bg-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  z-index: 10;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.edit-bg-btn:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+  border-color: rgba(0, 0, 0, 0.8);
+  opacity: 1;
+}
+
+/* 头像容器 */
+.avatar-wrapper {
   position: relative;
+  flex-shrink: 0;
 }
 
 .profile-avatar {
@@ -280,10 +278,11 @@ const handleLikesClick = () => {
   transition: opacity 0.3s ease;
 }
 
-.avatar-container:hover .edit-avatar-btn {
+.avatar-wrapper:hover .edit-avatar-btn {
   opacity: 1;
 }
 
+/* 用户名容器 */
 .user-details {
   flex: 1;
   min-width: 0;
@@ -356,15 +355,15 @@ const handleLikesClick = () => {
 .stat-divider {
   width: 1px;
   height: 20px;
-  background-color: #eee;
+  background-color: #e0e0e0;
 }
 
 .user-signature {
   font-size: 14px;
   color: #666;
-  line-height: 1.6;
   margin-bottom: 15px;
-  cursor: text;
+  line-height: 1.5;
+  cursor: pointer;
   transition: color 0.3s ease;
 }
 
@@ -374,89 +373,41 @@ const handleLikesClick = () => {
 
 .user-tags {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
 }
 
 .user-tag {
-  background-color: #f5f7fa;
-  border-color: #e4e7ed;
-  color: #606266;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.user-tag:hover {
-  background-color: #e6f7ff;
-  border-color: #91d5ff;
-  color: #1890ff;
+  background-color: #f0f2f5;
+  border-color: #e5e6eb;
+  color: #595959;
 }
 
 .add-tag-btn {
-  padding: 0 10px;
-  height: 28px;
-  line-height: 26px;
+  border-color: #d9d9d9;
+  color: #999;
 }
 
-.right-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  flex-shrink: 0;
-  align-self: flex-start;
-}
-
-.action-btn {
-  width: 120px;
-  height: 36px;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.follow-btn {
-  background-color: #f759ab;
-  border-color: #f759ab;
-}
-
-.follow-btn:hover {
-  background-color: #ff7ac6;
-  border-color: #ff7ac6;
-}
-
-.follow-btn.is-checked {
-  background-color: #999;
-  border-color: #999;
+.add-tag-btn:hover {
+  border-color: #409eff;
+  color: #409eff;
+  background-color: #ecf5ff;
 }
 
 /* 响应式设计 */
-@media (max-width: 1024px) {
-  .profile-info {
-    flex-wrap: wrap;
-  }
-  
-  .right-actions {
-    width: 100%;
-    flex-direction: row;
-    justify-content: flex-end;
-  }
-}
-
 @media (max-width: 768px) {
-  .profile-info {
+  .profile-content {
     flex-direction: column;
     text-align: center;
-    top: -30px;
-    padding: 15px;
   }
   
-  .avatar-section {
-    margin-top: -50px;
+  .avatar-wrapper {
     margin-bottom: 15px;
   }
   
-  .profile-avatar {
-    width: 100px;
-    height: 100px;
+  .username-row {
+    justify-content: center;
+    margin-bottom: 15px;
   }
   
   .username {
@@ -472,17 +423,47 @@ const handleLikesClick = () => {
     font-size: 16px;
   }
   
-  .right-actions {
-    justify-content: center;
-  }
-  
-  .action-btn {
-    width: 100px;
-    font-size: 13px;
-  }
-  
   .user-tags {
     justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-info {
+    padding: 15px;
+    top: -30px;
+  }
+  
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+    font-size: 32px;
+  }
+  
+  .verification-badge,
+  .edit-avatar-btn {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .username {
+    font-size: 18px;
+  }
+  
+  .stats-section {
+    gap: 10px;
+  }
+  
+  .stat-value {
+    font-size: 14px;
+  }
+  
+  .stat-label {
+    font-size: 12px;
+  }
+  
+  .stat-divider {
+    height: 15px;
   }
 }
 </style>

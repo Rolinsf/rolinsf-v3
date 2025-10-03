@@ -27,23 +27,12 @@
         </template>
       </el-dropdown>
     </div>
-    
-    <!-- 背景图编辑按钮 -->
-    <el-button 
-      v-if="canEdit" 
-      size="small" 
-      class="edit-bg-btn"
-      @click="triggerBgChange"
-    >
-      <el-icon><Edit /></el-icon>
-      编辑背景
-    </el-button>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { Plus, ChatDotSquare, MoreFilled, Edit } from '@element-plus/icons-vue'
+import { Plus, ChatDotSquare, MoreFilled } from '@element-plus/icons-vue'
 
 const props = defineProps({
   // 背景图片URL
@@ -67,8 +56,7 @@ const emit = defineEmits([
   'follow',
   'message',
   'share',
-  'report',
-  'backgroundChange'
+  'report'
 ])
 
 // 个人主页背景图
@@ -91,11 +79,6 @@ const handleDropdownCommand = (command) => {
   } else if (command === 'report') {
     emit('report')
   }
-}
-
-// 触发背景图更改
-const triggerBgChange = () => {
-  emit('backgroundChange')
 }
 </script>
 
@@ -122,11 +105,11 @@ const triggerBgChange = () => {
   right: 20px;
   display: flex;
   gap: 10px;
-  z-index: 10;
 }
 
 .follow-btn, .message-btn {
   transition: all 0.3s ease;
+  z-index: 10;
 }
 
 .follow-btn {
@@ -137,26 +120,6 @@ const triggerBgChange = () => {
 .follow-btn:hover {
   background-color: #ff7ac6;
   border-color: #ff7ac6;
-}
-
-.follow-btn.is-checked {
-  background-color: #999;
-  border-color: #999;
-}
-
-.edit-bg-btn {
-  position: absolute;
-  bottom: 15px;
-  right: 20px;
-  background-color: rgba(0, 0, 0, 0.5);
-  border-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  transition: all 0.3s ease;
-}
-
-.edit-bg-btn:hover {
-  background-color: rgba(0, 0, 0, 0.7);
-  border-color: rgba(0, 0, 0, 0.7);
 }
 
 /* 响应式设计 */
@@ -171,18 +134,8 @@ const triggerBgChange = () => {
     gap: 8px;
   }
   
-  .edit-bg-btn {
-    bottom: 10px;
-    right: 10px;
-  }
-  
-  :deep(.el-button) {
-    font-size: 12px;
-    padding: 4px 8px;
-  }
-  
-  :deep(.el-icon) {
-    font-size: 14px;
+  .top-actions .el-button {
+    padding: 0 10px;
   }
 }
 </style>

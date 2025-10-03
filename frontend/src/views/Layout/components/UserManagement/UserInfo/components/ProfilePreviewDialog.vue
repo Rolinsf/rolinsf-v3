@@ -10,23 +10,23 @@
     <div class="profile-preview">
       <!-- 1. 头部背景图组件 -->
       <ProfileHeader
-        :background-image="profileBackground"
-        :is-following="isFollowing"
+        :background-image="profileData.backgroundImage"
+        :is-following="profileData.isFollowing"
         :can-edit="true"
         @follow="handleFollow"
         @message="handleMessage"
         @share="handleShare"
         @report="handleReport"
-        @background-change="handleBackgroundChange"
       />
       
       <!-- 2. 中间个人信息组件 -->
       <ProfileInfo
-        :user-info="userInfo"
-        :stats="userStats"
-        :user-tags="userTags"
-        :is-following="isFollowing"
+        :user-info="profileData.userInfo"
+        :stats="profileData.stats"
+        :user-tags="profileData.tags"
+        :is-following="profileData.isFollowing"
         :can-edit="true"
+        :background-image="profileData.backgroundImage"
         @avatar-change="handleAvatarChange"
         @name-edit="handleNameEdit"
         @bio-edit="handleBioEdit"
@@ -36,15 +36,16 @@
         @following-click="handleFollowingClick"
         @followers-click="handleFollowersClick"
         @likes-click="handleLikesClick"
+        @bg-change="handleBackgroundChange"
       />
       
       <!-- 3. 下面内容区域组件 -->
       <ProfileContent
         ref="profileContentRef"
-        :content-stats="contentStats"
-        :works-list="worksList"
-        :comments-list="commentsList"
-        :recommendations-list="recommendationsList"
+        :content-stats="profileData.contentStats"
+        :works-list="profileData.works"
+        :comments-list="profileData.comments"
+        :recommendations-list="profileData.recommendations"
         :can-edit="true"
         @tab-change="handleTabChange"
         @work-click="handleWorkClick"
@@ -62,7 +63,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import ProfileHeader from './ProfileHeader.vue'
 import ProfileInfo from './ProfileInfo.vue'
 import ProfileContent from './ProfileContent.vue'
@@ -82,38 +83,102 @@ const profileContentRef = ref(null)
 // 对话框可见状态
 const dialogVisible = ref(false)
 
-// 个人主页背景图
-const profileBackground = 'https://via.placeholder.com/1200x300?text=个人主页背景'
+// 预设背景图选项
+const backgroundOptions = [
+  'https://via.placeholder.com/1200x300?text=个人主页背景1',
+  'https://via.placeholder.com/1200x300?text=个人主页背景2',
+  'https://via.placeholder.com/1200x300?text=个人主页背景3',
+  'https://via.placeholder.com/1200x300?text=个人主页背景4',
+  'https://via.placeholder.com/1200x300?text=个人主页背景5'
+]
 
-// 是否关注状态
-const isFollowing = ref(false)
+// 当前选中的背景图索引
+let currentBgIndex = 0
 
-// 用户统计数据
-const userStats = {
-  following: 156,
-  followers: 128,
-  likes: 2341,
-  views: 15623
+// 响应式个人资料数据对象，基于props.userInfo动态生成
+const profileData = ref({
+  // 用户基本信息
+  userInfo: props.userInfo,
+  // 背景图
+  backgroundImage: props.userInfo.backgroundImage || backgroundOptions[0],
+  // 是否关注状态
+  isFollowing: false,
+  // 统计数据
+  stats: {
+    following: props.userInfo.following || 0,
+    followers: props.userInfo.followers || 0,
+    likes: props.userInfo.likes || 0,
+    views: props.userInfo.views || 0
+  },
+  // 内容统计
+  contentStats: {
+    works: props.userInfo.workCount || 0,
+    comments: props.userInfo.commentCount || 0,
+    recommendations: props.userInfo.recommendationCount || 0
+  },
+  // 用户标签
+  tags: props.userInfo.tags || [],
+  // 作品列表
+  works: [],
+  // 评论列表
+  comments: [],
+  // 推荐列表
+  recommendations: []
+})
+
+// 监听userInfo变化，动态更新预览数据
+watch(() => props.userInfo, (newUserInfo) => {
+  profileData.value.userInfo = newUserInfo
+  
+  // 更新统计数据
+  profileData.value.stats = {
+    following: newUserInfo.following || 0,
+    followers: newUserInfo.followers || 0,
+    likes: newUserInfo.likes || 0,
+    views: newUserInfo.views || 0
+  }
+  
+  // 更新内容统计
+  profileData.value.contentStats = {
+    works: newUserInfo.workCount || 0,
+    comments: newUserInfo.commentCount || 0,
+    recommendations: newUserInfo.recommendationCount || 0
+  }
+  
+  // 更新标签
+  profileData.value.tags = newUserInfo.tags || []
+  
+  // 更新背景图（如果有）
+  if (newUserInfo.backgroundImage) {
+    profileData.value.backgroundImage = newUserInfo.backgroundImage
+  }
+  
+  // 重新加载相关数据
+  loadUserData()
+}, { deep: true })
+
+// 加载用户相关数据
+const loadUserData = () => {
+  // 这里应该从API获取实际数据
+  // 目前使用模拟数据，但基于用户的实际数据生成
+  const user = profileData.value.userInfo
+  
+  // 生成与用户相关的作品数据
+  profileData.value.works = generateSampleWorks(
+    profileData.value.contentStats.works || 6,
+    user.username || '用户'
+  )
+  
+  // 生成评论数据
+  profileData.value.comments = generateSampleComments(
+    profileData.value.contentStats.comments || 5
+  )
+  
+  // 生成推荐数据
+  profileData.value.recommendations = generateSampleRecommendations(
+    profileData.value.contentStats.recommendations || 4
+  )
 }
-
-// 内容统计数据
-const contentStats = {
-  works: 32,
-  comments: 12,
-  recommendations: 8
-}
-
-// 用户标签
-const userTags = ['技术分享', '前端开发', 'Vue爱好者', '编程学习']
-
-// 作品列表
-const worksList = generateSampleWorks(6)
-
-// 评论列表
-const commentsList = generateSampleComments(5)
-
-// 推荐列表
-const recommendationsList = generateSampleRecommendations(4)
 
 // 监听visible变化
 const watchVisible = (newVal) => {
@@ -129,6 +194,9 @@ const open = () => {
       profileContentRef.value.setActiveTab('works')
     }
   }, 100)
+  
+  // 打开时加载数据
+  loadUserData()
 }
 
 const close = () => {
@@ -144,53 +212,65 @@ const handleClose = () => {
 
 // 处理关注按钮点击
 const handleFollow = () => {
-  isFollowing.value = !isFollowing.value
+  profileData.value.isFollowing = !profileData.value.isFollowing
+  
+  // 动态更新粉丝数
+  if (profileData.value.isFollowing) {
+    profileData.value.stats.followers++
+  } else {
+    profileData.value.stats.followers = Math.max(0, profileData.value.stats.followers - 1)
+  }
+  
   // 这里可以添加关注/取消关注的API调用
-  console.log('关注/取消关注用户')
+  console.log('关注/取消关注用户:', profileData.value.userInfo.username)
 }
 
 // 处理私信按钮点击
 const handleMessage = () => {
   // 这里可以添加打开私信对话框的逻辑
-  console.log('发送私信给用户')
+  console.log('发送私信给用户:', profileData.value.userInfo.username)
 }
 
 // 处理分享按钮点击
 const handleShare = () => {
   // 这里可以添加分享功能的逻辑
-  console.log('分享个人主页')
+  console.log('分享个人主页:', profileData.value.userInfo.username)
 }
 
 // 处理举报按钮点击
 const handleReport = () => {
   // 这里可以添加举报功能的逻辑
-  console.log('举报用户')
+  console.log('举报用户:', profileData.value.userInfo.username)
 }
 
 // 处理背景图更改
 const handleBackgroundChange = () => {
-  // 这里可以添加背景图上传/选择的逻辑
+  // 实现动态更换背景图的功能
   console.log('更改背景图')
-  // 模拟更改背景图
-  // profileBackground.value = '新的背景图URL'
+  
+  // 切换到下一个预设背景图
+  currentBgIndex = (currentBgIndex + 1) % backgroundOptions.length
+  profileData.value.backgroundImage = backgroundOptions[currentBgIndex]
+  
+  // 这里可以添加实际的背景图上传/选择逻辑
 }
 
 // 处理头像更改
 const handleAvatarChange = () => {
   // 这里可以添加头像上传/选择的逻辑
-  console.log('更改头像')
+  console.log('更改头像:', profileData.value.userInfo.username)
 }
 
 // 处理名称编辑
 const handleNameEdit = () => {
   // 这里可以添加编辑用户名的逻辑
-  console.log('编辑用户名')
+  console.log('编辑用户名:', profileData.value.userInfo.username)
 }
 
 // 处理签名编辑
 const handleBioEdit = () => {
   // 这里可以添加编辑个人签名的逻辑
-  console.log('编辑个人签名')
+  console.log('编辑个人签名:', profileData.value.userInfo.username)
 }
 
 // 处理添加标签
@@ -201,20 +281,17 @@ const handleAddTag = () => {
 
 // 处理关注统计点击
 const handleFollowingClick = () => {
-  // 这里可以添加查看关注列表的逻辑
-  console.log('查看关注列表')
+  console.log('查看关注列表:', profileData.value.userInfo.username)
 }
 
 // 处理粉丝统计点击
 const handleFollowersClick = () => {
-  // 这里可以添加查看粉丝列表的逻辑
-  console.log('查看粉丝列表')
+  console.log('查看粉丝列表:', profileData.value.userInfo.username)
 }
 
 // 处理获赞统计点击
 const handleLikesClick = () => {
-  // 这里可以添加查看获赞内容的逻辑
-  console.log('查看获赞内容')
+  console.log('查看获赞内容:', profileData.value.userInfo.username)
 }
 
 // 处理标签页切换
@@ -224,43 +301,38 @@ const handleTabChange = (tabName) => {
 
 // 处理作品点击
 const handleWorkClick = (work) => {
-  // 这里可以添加打开作品详情的逻辑
   console.log('查看作品:', work.title)
 }
 
 // 处理创建作品
 const handleCreateWork = () => {
-  // 这里可以添加创建新作品的逻辑
   console.log('创建新作品')
 }
 
 // 处理评论点赞
 const handleCommentLike = (comment) => {
-  // 这里可以添加评论点赞的逻辑
   console.log('点赞评论:', comment.id)
 }
 
 // 处理评论回复
 const handleCommentReply = (comment) => {
-  // 这里可以添加评论回复的逻辑
   console.log('回复评论:', comment.id)
 }
 
 // 处理推荐点击
 const handleRecommendationClick = (recommendation) => {
-  // 这里可以添加打开推荐内容的逻辑
   console.log('查看推荐:', recommendation.title)
 }
 
-// 生成示例作品数据
-function generateSampleWorks(count) {
+// 生成示例作品数据（基于用户名定制）
+function generateSampleWorks(count, username) {
   const titles = [
-    'Vue3入门到精通：组件化开发实战',
-    '前端性能优化技巧分享',
-    'Element Plus 组件库全面解析',
-    '响应式布局设计原则与实践',
-    'JavaScript高级特性详解',
-    '前端工程化最佳实践'
+    `${username}的Vue3入门教程`,
+    `${username}分享前端性能优化技巧`,
+    `${username}的Element Plus教程`,
+    `${username}讲解响应式布局`,
+    `${username}的JavaScript高级特性`,
+    `${username}的前端工程化实践`
   ]
   
   return Array.from({ length: count }, (_, index) => ({
@@ -314,12 +386,6 @@ function generateSampleRecommendations(count) {
     views: Math.floor(Math.random() * 20000)
   }))
 }
-
-// 组件挂载时的逻辑
-onMounted(() => {
-  // 初始化组件
-  console.log('个人主页预览组件已挂载')
-})
 
 // 向父组件暴露方法
 defineExpose({

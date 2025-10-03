@@ -4,42 +4,25 @@
     <template #header>
       <div class="card-header">
         <span>基本信息</span>
-        <el-button 
-          type="primary" 
-          size="small" 
-          @click="$emit('switch-edit', 'basic')"
-          :disabled="editMode"
-        >
-          编辑
-        </el-button>
+        <div class="header-actions">
+          <!-- 编辑按钮 -->
+          <el-button type="primary" size="small" @click="$emit('switch-edit', 'basic')" :disabled="editMode"
+            class="edit-btn">
+            编辑
+          </el-button>
+        </div>
       </div>
     </template>
 
     <!-- 基本信息表单 -->
-    <el-form 
-      :model="localUserInfo" 
-      ref="basicInfoFormRef" 
-      :rules="basicInfoRules" 
-      label-width="120px" 
-      class="basic-info-form"
-    >
+    <el-form :model="localUserInfo" ref="basicInfoFormRef" :rules="basicInfoRules" label-width="120px"
+      class="basic-info-form">
       <div class="avatar-section">
-        <el-avatar 
-          size="120" 
-          :src="localUserInfo.avatar || defaultAvatar" 
-          class="user-avatar"
-        >
+        <el-avatar size="120" :src="localUserInfo.avatar || defaultAvatar" class="user-avatar">
           {{ getUserInitial(localUserInfo.username) }}
         </el-avatar>
-        <el-upload
-          v-if="editMode"
-          class="avatar-uploader"
-          action="#"
-          :show-file-list="false"
-          :before-upload="handleAvatarUpload"
-          :on-success="handleAvatarSuccess"
-          :on-error="handleAvatarError"
-        >
+        <el-upload v-if="editMode" class="avatar-uploader" action="#" :show-file-list="false"
+          :before-upload="handleAvatarUpload" :on-success="handleAvatarSuccess" :on-error="handleAvatarError">
           <el-button size="small" type="primary" class="upload-button">更换头像</el-button>
         </el-upload>
         <p v-if="avatarUploading" class="upload-status">上传中...</p>
@@ -70,25 +53,38 @@
       </el-form-item>
 
       <el-form-item label="个人简介" prop="bio">
-        <el-input
-          v-model="localUserInfo.bio"
-          :disabled="!editMode"
-          type="textarea"
-          placeholder="请输入个人简介"
-          :rows="3"
-        />
+        <el-input v-model="localUserInfo.bio" :disabled="!editMode" type="textarea" placeholder="请输入个人简介" :rows="3" />
       </el-form-item>
 
-      <el-form-item v-if="editMode" class="form-actions">
-        <el-button type="primary" @click="saveInfo">保存</el-button>
-        <el-button @click="cancelEdit">取消</el-button>
+      <!-- 新增：背景图片上传 -->
+      <el-form-item label="主页背景" prop="backgroundImage">
+        <el-upload v-if="editMode" class="background-uploader"
+          action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15" :show-file-list="false"
+          :on-success="handleBgSuccess" :before-upload="beforeBgUpload" list-type="picture-card">
+          <img v-if="localUserInfo.backgroundImage" :src="localUserInfo.backgroundImage" class="background-preview" />
+          <el-icon v-else>
+            <Plus />
+          </el-icon>
+        </el-upload>
+        <div v-if="!editMode" class="background-display">
+          <img v-if="localUserInfo.backgroundImage" :src="localUserInfo.backgroundImage"
+            class="background-preview-static" />
+          <span v-else>未设置背景图片</span>
+        </div>
       </el-form-item>
+
+        <el-form-item v-if="editMode" class="form-actions">
+          <el-button type="primary" @click="saveInfo">保存</el-button>
+          <el-button @click="cancelEdit">取消</el-button>
+        </el-form-item>
     </el-form>
   </el-card>
 </template>
 
 <script setup>
 import { ref, reactive, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Check, Edit, Plus, ChatDotSquare, Picture } from '@element-plus/icons-vue'
 
 const props = defineProps({
   userInfo: {
@@ -102,10 +98,18 @@ const props = defineProps({
   avatarUploading: {
     type: Boolean,
     default: false
+  },
+  isFollowing: {
+    type: Boolean,
+    default: false
+  },
+  backgroundImage: {
+    type: String,
+    default: ''
   }
 })
 
-const emit = defineEmits(['switch-edit', 'cancel-edit', 'save-info', 'upload-avatar', 'upload-success', 'upload-error'])
+const emit = defineEmits(['switch-edit', 'cancel-edit', 'save-info', 'upload-avatar', 'upload-success', 'upload-error', 'bg-change', 'follow', 'message'])
 
 // 表单引用
 const basicInfoFormRef = ref(null)
@@ -164,6 +168,21 @@ const handleAvatarError = (error) => {
   emit('upload-error', error)
 }
 
+// 处理背景图更改
+const handleBgChange = () => {
+  emit('bg-change')
+}
+
+// 处理关注按钮点击
+const handleFollow = () => {
+  emit('follow')
+}
+
+// 处理私信按钮点击
+const handleMessage = () => {
+  emit('message')
+}
+
 // 保存信息
 const saveInfo = async () => {
   if (!basicInfoFormRef.value) return
@@ -205,6 +224,60 @@ const cancelEdit = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bg-change-btn {
+  background-color: #f5f7fa;
+  border-color: #e4e7ed;
+  color: #606266;
+}
+
+.bg-change-btn:hover {
+  background-color: #e6e8eb;
+  border-color: #dcdfe6;
+}
+
+.social-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.follow-btn {
+  background-color: #409eff;
+  border-color: #409eff;
+}
+
+.follow-btn:hover {
+  background-color: #66b1ff;
+  border-color: #66b1ff;
+}
+
+.message-btn {
+  background-color: #67c23a;
+  border-color: #67c23a;
+  color: white;
+}
+
+.message-btn:hover {
+  background-color: #85ce61;
+  border-color: #85ce61;
+}
+
+.edit-btn {
+  background-color: #13c2c2;
+  border-color: #13c2c2;
+}
+
+.edit-btn:hover {
+  background-color: #36cfc9;
+  border-color: #36cfc9;
 }
 
 .avatar-section {
@@ -252,6 +325,15 @@ const cancelEdit = () => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+  .header-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  
+  .social-actions {
+    flex-wrap: wrap;
+  }
+  
   .avatar-section {
     padding: 15px 0;
   }
@@ -265,7 +347,24 @@ const cancelEdit = () => {
   .card-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: center;
+    flex-direction: column;
     gap: 8px;
+  }
+  
+  .social-actions {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .social-actions button {
+    flex: 1;
+    max-width: 120px;
   }
   
   .form-actions {

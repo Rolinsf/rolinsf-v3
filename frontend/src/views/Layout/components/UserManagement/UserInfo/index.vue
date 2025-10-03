@@ -16,12 +16,16 @@
           :user-info="userBasicInfo"
           :edit-mode="basicEditMode"
           :avatar-uploading="avatarUploading"
+          :is-following="isFollowing"
           @switch-edit="handleSwitchEdit"
           @cancel-edit="handleCancelEdit"
           @save-info="handleSaveInfo"
           @upload-avatar="handleAvatarUpload"
           @upload-success="handleAvatarSuccess"
           @upload-error="handleAvatarError"
+          @follow-user="handleFollowUser"
+          @send-message="handleSendMessage"
+          @change-background="handleChangeBackground"
         />
       </div>
 
@@ -81,9 +85,13 @@ const originalBasicInfo = ref({})
 // 显示编辑页面头部
 const showEditHeader = ref(true)
 
+// 是否关注状态
+const isFollowing = ref(false)
+
 // 上传状态
 const avatarUploading = ref(false)
 const passwordLoading = ref(false)
+const backgroundUploading = ref(false)
 
 // 对话框状态
 const loginHistoryVisible = ref(false)
@@ -100,6 +108,7 @@ const userBasicInfo = reactive({
   phone: '',
   bio: '',
   avatar: '',
+  backgroundImage: '',
   emailVerified: false,
   // B站风格个人主页相关数据
   followerCount: 0,
@@ -278,6 +287,7 @@ const initUserInfo = () => {
       phone: userStore.userInfo.phone || '',
       bio: userStore.userInfo.bio || '',
       avatar: userStore.userInfo.avatar || '',
+      backgroundImage: userStore.userInfo.backgroundImage || '',
       emailVerified: userStore.userInfo.emailVerified || false
     })
   } else {
@@ -290,6 +300,7 @@ const initUserInfo = () => {
     userBasicInfo.gender = 1
     userBasicInfo.bio = '这个人很懒，什么都没有留下'
     userBasicInfo.avatar = 'https://via.placeholder.com/200x280?text=%E5%B0%8F%E8%AF%B4%E5%B0%81%E9%9D%A2'
+    userBasicInfo.backgroundImage = 'https://via.placeholder.com/1200x300?text=%E8%83%8C%E6%99%AF%E5%9B%BE'
     userBasicInfo.followerCount = 128
     userBasicInfo.followingCount = 64
     userBasicInfo.viewsCount = 1024
@@ -317,6 +328,50 @@ const handleShareProfile = () => {
   const profileUrl = `https://example.com/user/${userBasicInfo.username}`
   ElMessage.success(`分享链接: ${profileUrl}`)
   // 这里可以添加实际的分享逻辑，如复制到剪贴板
+}
+
+// 处理关注用户
+const handleFollowUser = async () => {
+  try {
+    // 模拟API调用
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    // 切换关注状态
+    isFollowing.value = !isFollowing.value
+    
+    // 更新关注数
+    if (isFollowing.value) {
+      userBasicInfo.followerCount++
+      ElMessage.success('关注成功')
+    } else {
+      userBasicInfo.followerCount--
+      ElMessage.success('已取消关注')
+    }
+  } catch (error) {
+    console.error('关注操作失败:', error)
+    ElMessage.error('操作失败，请重试')
+  }
+}
+
+// 处理发送私信
+const handleSendMessage = () => {
+  // 实际项目中应该跳转到私信页面或打开私信对话框
+  ElMessage.info('打开私信对话框')
+}
+
+// 处理更换背景图
+const handleChangeBackground = (file) => {
+  backgroundUploading.value = true
+  
+  // 模拟上传过程
+  setTimeout(() => {
+    // 实际项目中应该设置服务器返回的背景图URL
+    // userBasicInfo.backgroundImage = response.url
+    ElMessage.success('背景图更新成功')
+    backgroundUploading.value = false
+  }, 1000)
+  
+  return false // 阻止默认上传行为
 }
 
 // 组件挂载时初始化
