@@ -26,7 +26,7 @@
           </el-menu-item>
           <el-menu-item index="/admin/user/my-novels">
             <el-icon>
-              <Reading />
+              <Document />
             </el-icon>
             <span>我的小说</span>
           </el-menu-item>
