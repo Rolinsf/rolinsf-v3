@@ -5,42 +5,32 @@
     <div class="profile-content">
       <!-- 头像区域 -->
       <div class="avatar-wrapper">
-        <el-avatar 
-          size="120" 
-          :src="userInfo.avatar || defaultAvatar" 
-          class="profile-avatar"
-        >
+        <el-avatar size="120" :src="userInfo.avatar || defaultAvatar" class="profile-avatar">
           {{ getUserInitial(userInfo.username) }}
         </el-avatar>
-        
+
         <!-- 编辑头像按钮 -->
-        <el-button 
-          v-if="canEdit" 
-          size="small" 
-          class="edit-avatar-btn"
-          @click="triggerAvatarChange"
-        >
-          <el-icon><Edit /></el-icon>
+        <el-button v-if="canEdit" size="small" class="edit-avatar-btn" @click="triggerAvatarChange">
+          <el-icon>
+            <Edit />
+          </el-icon>
         </el-button>
       </div>
-      
+
       <!-- 用户信息区域 -->
       <div class="user-details">
         <!-- 用户名和编辑按钮 -->
         <div class="username-row">
           <h1 class="username">{{ userInfo.username }}</h1>
-          
+
           <!-- 编辑用户名按钮 -->
-          <el-button 
-            v-if="canEdit" 
-            size="small" 
-            class="edit-name-btn"
-            @click="triggerNameEdit"
-          >
-            <el-icon><Edit /></el-icon>
+          <el-button v-if="canEdit" size="small" class="edit-name-btn" @click="triggerNameEdit">
+            <el-icon>
+              <Edit />
+            </el-icon>
           </el-button>
         </div>
-        
+
         <!-- 关注/粉丝/获赞统计 -->
         <div class="stats-section">
           <div class="stat-item" @click="handleFollowingClick">
@@ -58,12 +48,37 @@
             <span class="stat-label">获赞与收藏</span>
           </div>
           <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-value">{{ stats.views }}</span>
-            <span class="stat-label">视频播放</span>
-          </div>
         </div>
-        
+
+        <!-- 个人操作按钮 -->
+        <div class="top-actions">
+          <el-button type="primary" size="small" class="follow-btn" @click="handleFollow">
+            <el-icon>
+              <Plus />
+            </el-icon>
+            {{ isFollowing ? '已关注' : '关注' }}
+          </el-button>
+          <el-button size="small" class="message-btn" @click="handleMessage">
+            <el-icon>
+              <ChatDotSquare />
+            </el-icon>
+            私信
+          </el-button>
+          <el-dropdown trigger="click" @command="handleDropdownCommand">
+            <el-button size="small">
+              <el-icon>
+                <MoreFilled />
+              </el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="share">分享</el-dropdown-item>
+                <el-dropdown-item command="report">举报</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+
         <!-- 个人签名 -->
         <div class="user-signature" @click="triggerBioEdit" v-if="canEdit">
           {{ userInfo.bio || '点击添加个人签名' }}
@@ -71,24 +86,17 @@
         <div class="user-signature" v-else>
           {{ userInfo.bio || '该用户还没有填写个人签名' }}
         </div>
-        
+
         <!-- 用户标签 -->
         <div class="user-tags">
-          <el-tag 
-            v-for="tag in userTags" 
-            :key="tag" 
-            class="user-tag"
-          >
+          <el-tag v-for="tag in userTags" :key="tag" class="user-tag">
             {{ tag }}
           </el-tag>
-          <el-button 
-            v-if="canEdit && userTags.length < 8" 
-            size="small" 
-            type="dashed" 
-            class="add-tag-btn"
-            @click="triggerAddTag"
-          >
-            <el-icon><Plus /></el-icon>
+          <el-button v-if="canEdit && userTags.length < 8" size="small" type="dashed" class="add-tag-btn"
+            @click="triggerAddTag">
+            <el-icon>
+              <Plus />
+            </el-icon>
             添加标签
           </el-button>
         </div>
@@ -193,6 +201,25 @@ const handleFollowersClick = () => {
 const handleLikesClick = () => {
   emit('likesClick')
 }
+
+// 处理关注按钮点击
+const handleFollow = () => {
+  emit('follow')
+}
+
+// 处理私信按钮点击
+const handleMessage = () => {
+  emit('message')
+}
+
+// 处理下拉菜单命令
+const handleDropdownCommand = (command) => {
+  if (command === 'share') {
+    emit('share')
+  } else if (command === 'report') {
+    emit('report')
+  }
+}
 </script>
 
 <style scoped>
@@ -200,7 +227,7 @@ const handleLikesClick = () => {
   padding: 20px;
   background-color: #fff;
   border-bottom: 1px solid #eee;
-  margin-bottom: 20px;
+  margin-bottom: 0%;
   position: relative;
   top: -40px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
@@ -292,7 +319,7 @@ const handleLikesClick = () => {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 8px; /* 减小底部间距 */
   flex-wrap: wrap;
 }
 
@@ -325,7 +352,8 @@ const handleLikesClick = () => {
   display: flex;
   align-items: center;
   gap: 20px;
-  margin-bottom: 10px;
+  margin-bottom: 5px; /* 减小底部间距 */
+  margin-top: 0; /* 确保顶部没有额外间距 */
   flex-wrap: wrap;
 }
 
@@ -361,7 +389,7 @@ const handleLikesClick = () => {
 .user-signature {
   font-size: 14px;
   color: #666;
-  margin-bottom: 15px;
+  margin-bottom: 2px;
   line-height: 1.5;
   cursor: pointer;
   transition: color 0.3s ease;
@@ -392,6 +420,30 @@ const handleLikesClick = () => {
   border-color: #409eff;
   color: #409eff;
   background-color: #ecf5ff;
+}
+
+.top-actions {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.follow-btn,
+.message-btn {
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.follow-btn {
+  background-color: #f759ab;
+  border-color: #f759ab;
+}
+
+.follow-btn:hover {
+  background-color: #ff7ac6;
+  border-color: #ff7ac6;
 }
 
 /* 响应式设计 */
@@ -425,6 +477,16 @@ const handleLikesClick = () => {
   
   .user-tags {
     justify-content: center;
+  }
+
+  .top-actions {
+    top: 10px;
+    right: 10px;
+    gap: 8px;
+  }
+
+  .top-actions .el-button {
+    padding: 0 10px;
   }
 }
 
