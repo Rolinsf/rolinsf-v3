@@ -269,4 +269,56 @@ onUnmounted(() => {
   font-size: 12px;
   z-index: 10;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  :deep(.el-dialog) {
+    width: 95% !important;
+    margin: 5px auto;
+  }
+  
+  .vditor-container {
+    min-height: 300px; /* 移动端减少编辑器高度 */
+    margin-bottom: 15px;
+  }
+  
+  .vditor {
+    min-height: 300px;
+  }
+  
+  :deep(.vditor-toolbar) {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 5px;
+  }
+  
+  :deep(.vditor-content) {
+    min-height: 250px;
+    font-size: 16px; /* 移动端增大字体 */
+    line-height: 1.6;
+  }
+  
+  .word-count {
+    bottom: 5px;
+    right: 5px;
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+  
+  :deep(.el-dialog__body) {
+    padding: 10px;
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+  }
+  
+  /* 调整下拉选择器在移动端的样式 */
+  :deep(.el-select) {
+    width: 100%;
+  }
+  
+  /* 调整输入框在移动端的样式 */
+  :deep(.el-input__inner) {
+    font-size: 16px;
+  }
+}
 </style>

@@ -120,5 +120,47 @@ const handleSave = async () => {
 </script>
 
 <style scoped>
-/* 样式可以在这里添加 */
+.dialog-form {
+  margin: 20px 0;
+}
+
+.form-item {
+  margin-bottom: 20px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  :deep(.el-dialog) {
+    width: 90% !important;
+    margin: 5px auto;
+  }
+  
+  .dialog-form {
+    margin: 10px 0;
+  }
+  
+  .form-item {
+    margin-bottom: 15px;
+  }
+  
+  .actions {
+    flex-direction: column;
+    margin-top: 20px;
+  }
+  
+  .actions :deep(.el-button) {
+    width: 100%;
+  }
+  
+  :deep(.el-dialog__body) {
+    padding: 10px;
+  }
+}
 </style>

@@ -108,4 +108,28 @@ const menuRef = ref(null)
   margin-top: 6px;
   padding-top: 6px;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .el-dropdown-menu {
+    min-width: 200px;
+    max-width: 80vw;
+    padding: 8px 0;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%);
+  }
+  
+  .el-dropdown-item {
+    height: auto;
+    min-height: 44px;
+    line-height: 44px;
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+  
+  .el-dropdown-item:deep(.el-icon) {
+    font-size: 18px;
+  }
+}
 </style>

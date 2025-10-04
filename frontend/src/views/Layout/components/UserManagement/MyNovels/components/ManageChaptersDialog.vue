@@ -2,55 +2,66 @@
   <el-dialog
     v-model="dialogVisible"
     title="章节管理"
-    width="900px"
+    :width="isMobile ? '100%' : '900px'"
     :before-close="handleClose"
+    class="novel-management-dialog"
+    :fullscreen="isFullscreen"
   >
-    <div class="novel-info">
-      <h3>{{ novel.title }}</h3>
-      <p class="author">作者: {{ novel.author }}</p>
-    </div>
-    
-    <!-- 批量操作工具栏 -->
-    <div class="toolbar">
-      <el-button type="primary" size="small" @click="handleAddVolume">
-        <el-icon><Plus /></el-icon> 添加卷
-      </el-button>
-      <el-button size="small" @click="handleBatchPublish" :disabled="selectedNodes.length === 0">
-        <el-icon><Check /></el-icon> 批量发布
-      </el-button>
-      <el-button size="small" @click="handleBatchDelete" :disabled="selectedNodes.length === 0" type="danger">
-        <el-icon><Delete /></el-icon> 批量删除
-      </el-button>
-      <div class="search-wrapper">
-        <el-input
-          v-model="searchKeyword"
-          placeholder="搜索章节/卷"
-          size="small"
-          :prefix-icon="Search"
-          @input="handleSearch"
+    <div class="novel-management-container">
+      <div class="novel-info">
+        <h3>{{ novel.title }}</h3>
+        <!-- <p class="author">作者: {{ novel.author }}</p> -->
+      </div>
+      
+      <!-- 批量操作工具栏 -->
+      <div class="toolbar">
+        <div class="toolbar-buttons">
+          <el-button type="primary" size="small" @click="handleAddVolume">
+            <el-icon><Plus /></el-icon> 添加卷
+          </el-button>
+          <el-button size="small" @click="handleBatchPublish" :disabled="selectedNodes.length === 0">
+            <el-icon><Check /></el-icon> 批量发布
+          </el-button>
+          <el-button size="small" @click="handleBatchDelete" :disabled="selectedNodes.length === 0" type="danger">
+            <el-icon><Delete /></el-icon> 批量删除
+          </el-button>
+          <el-button size="small" @click="toggleFullscreen">
+            <el-icon><FullScreen /></el-icon> {{ isFullscreen ? '退出全屏' : '全屏' }}
+          </el-button>
+        </div>
+        <div class="search-wrapper">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="搜索章节/卷"
+            size="small"
+            :prefix-icon="Search"
+            @input="handleSearch"
+          />
+        </div>
+      </div>
+      
+      <!-- 章节树组件 -->
+      <div class="chapter-tree-wrapper">
+        <ChapterTree
+          :treeData="treeData"
+          :searchKeyword="searchKeyword"
+          @node-click="handleNodeClick"
+          @check-change="handleCheckChange"
+          @check="handleCheck"
+          @add-chapter="handleAddChapter"
+          @edit-node="handleEditNode"
+          @publish-chapter="handlePublishChapter"
+          @delete-node="handleDeleteNode"
+          @move-up="handleMoveUp"
+          @move-down="handleMoveDown"
+          @context-menu="handleContextMenu"
         />
       </div>
-    </div>
-    
-    <!-- 章节树组件 -->
-    <ChapterTree
-      :treeData="treeData"
-      :searchKeyword="searchKeyword"
-      @node-click="handleNodeClick"
-      @check-change="handleCheckChange"
-      @check="handleCheck"
-      @add-chapter="handleAddChapter"
-      @edit-node="handleEditNode"
-      @publish-chapter="handlePublishChapter"
-      @delete-node="handleDeleteNode"
-      @move-up="handleMoveUp"
-      @move-down="handleMoveDown"
-      @context-menu="handleContextMenu"
-    />
-    
-    <div class="actions">
-      <el-button type="primary" @click="handleSave">保存</el-button>
-      <el-button @click="handleClose">取消</el-button>
+      
+      <div class="actions">
+        <el-button type="primary" @click="handleSave">保存</el-button>
+        <el-button @click="handleClose">取消</el-button>
+      </div>
     </div>
     
     <!-- 子组件对话框 -->
@@ -88,7 +99,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Check, Search, Top, Bottom } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Check, Search, Top, Bottom, FullScreen } from '@element-plus/icons-vue'
 
 // 引入子组件
 import ChapterTree from './ChapterTree.vue'
@@ -143,6 +154,20 @@ const checkNodeKeys = ref([])
 const contextMenuVisible = ref(false)
 const contextMenuNode = ref(null)
 const contextMenuStyle = ref({ top: '0px', left: '0px' })
+
+// 移动端适配
+const isMobile = ref(window.innerWidth <= 768)
+const isFullscreen = ref(false)
+
+// 监听窗口大小变化
+const handleResize = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+
+// 切换全屏
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value
+}
 
 // 初始化树形数据
 const initTreeData = () => {
@@ -522,39 +547,73 @@ const handleGlobalClick = () => {
   }
 }
 
-// 组件挂载时监听visible变化和全局点击事件
+// 组件挂载时监听visible变化、全局点击事件和窗口大小变化
 onMounted(() => {
   initTreeData()
   document.addEventListener('click', handleGlobalClick)
+  window.addEventListener('resize', handleResize)
 })
 
 // 组件卸载时清理
 onUnmounted(() => {
   document.removeEventListener('click', handleGlobalClick)
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
 <style scoped>
+.novel-management-dialog {
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  /* 确保对话框内容不会超出视口 */
+  --max-width: 100vw;
+}
+
+.novel-management-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+}
+
 .novel-info {
-  margin-bottom: 20px;
-  padding-bottom: 10px;
+  padding: 10px 0;
+  margin-bottom: 15px;
   border-bottom: 1px solid #eee;
 }
 
 .novel-info h3 {
-  margin: 0 0 10px 0;
+  margin: 0 0 5px 0;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .novel-info .author {
   margin: 0;
-  color: #606266;
+  color: #666;
+  font-size: 14px;
 }
 
 .toolbar {
   display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
+  justify-content: space-between;
   align-items: center;
+  padding: 10px 0;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eaeaea;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.toolbar-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .search-wrapper {
@@ -562,16 +621,153 @@ onUnmounted(() => {
   width: 300px;
 }
 
+.chapter-tree-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 500px;
+  margin-bottom: 15px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.chapter-tree-wrapper.full-height {
+  height: 100%;
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 15px;
 }
 
 /* 确保对话框内容不会溢出 */
 :deep(.el-dialog__body) {
   max-height: calc(100vh - 200px);
   overflow-y: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .novel-management-dialog {
+    width: 100vw !important;
+    max-width: 100vw;
+    max-height: 100vh;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+  }
+  
+  .novel-management-container {
+    height: 100vh;
+    max-height: 100vh;
+    padding: 15px;
+    box-sizing: border-box;
+  }
+  
+  .novel-management-dialog :deep(.el-dialog__body) {
+    padding: 15px;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    height: calc(100vh - 60px);
+  }
+  
+  .novel-info {
+    padding: 15px 0;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .novel-info h3 {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+  
+  .novel-info .author {
+    font-size: 16px;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+    padding: 15px 0;
+    margin-bottom: 20px;
+  }
+  
+  .toolbar-buttons {
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .toolbar-buttons :deep(.el-button) {
+    padding: 12px 15px;
+    font-size: 16px;
+    min-width: calc(33.33% - 7px);
+    flex: 1;
+  }
+  
+  .search-wrapper {
+    width: 100%;
+    margin-left: 0;
+  }
+  
+  .search-wrapper :deep(.el-input) {
+    width: 100%;
+  }
+  
+  .chapter-tree-wrapper {
+    max-height: calc(100vh - 220px);
+    padding: 0;
+    margin-bottom: 20px;
+    border: none;
+  }
+  
+  .actions {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .actions :deep(.el-button) {
+    padding: 14px;
+    font-size: 18px;
+    width: 100%;
+  }
+  
+  /* 优化对话框标题 */
+  :deep(.el-dialog__header) {
+    padding: 20px 15px 15px;
+    background-color: #fafafa;
+  }
+  
+  :deep(.el-dialog__title) {
+    font-size: 20px;
+    font-weight: 600;
+  }
+  
+  /* 优化对话框关闭按钮 */
+  :deep(.el-dialog__headerbtn) {
+    top: 20px;
+    right: 15px;
+  }
+  
+  :deep(.el-dialog__headerbtn .el-dialog__close) {
+    font-size: 24px;
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* 全屏模式下的样式 */
+:deep(.el-dialog--fullscreen) .chapter-tree-wrapper {
+  max-height: calc(100vh - 200px);
+}
+
+/* 全屏模式下的章节树高度 */
+.chapter-tree-wrapper.full-height {
+  max-height: calc(100vh - 100px);
 }
 </style>

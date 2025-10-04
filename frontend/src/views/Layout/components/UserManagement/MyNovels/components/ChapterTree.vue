@@ -15,21 +15,30 @@
     >
       <template #default="{ node, data }">
         <div class="tree-node-content">
-          <el-tag
-            v-if="!data.isVolume && data.status"
-            :type="data.status === 'published' ? 'success' : 'warning'"
-            size="small"
-            class="status-tag"
-          >
-            {{ data.status === 'published' ? '已发布' : '草稿' }}
-          </el-tag>
-          <span class="node-index" v-if="!data.isVolume">{{ getChapterIndex(data) }}.</span>
-          <span class="node-title">{{ node.label }}</span>
-          <span class="node-info">
-            <span v-if="!data.isVolume && data.wordCount">{{ data.wordCount }}字</span>
-            <span v-if="!data.isVolume && data.publishDate">{{ formatDate(data.publishDate) }}</span>
-          </span>
-          <div class="node-actions">
+          <!-- 第一行：标题行 -->
+          <div class="node-title-row">
+            <el-tag
+              v-if="!data.isVolume && data.status"
+              :type="data.status === 'published' ? 'success' : 'warning'"
+              size="small"
+              class="status-tag"
+            >
+              {{ data.status === 'published' ? '已发布' : '草稿' }}
+            </el-tag>
+            <span class="node-index" v-if="!data.isVolume">{{ getChapterIndex(data) }}.</span>
+            <span class="node-title">{{ node.label }}</span>
+          </div>
+          
+          <!-- 第二行：时间信息行 -->
+          <div class="node-info-row">
+            <span class="node-info">
+              <span v-if="!data.isVolume && data.wordCount">{{ data.wordCount }}字</span>
+              <span v-if="!data.isVolume && data.publishDate">{{ formatDate(data.publishDate) }}</span>
+            </span>
+          </div>
+          
+          <!-- 第三行：操作按钮行 -->
+          <div class="node-actions-row">
             <el-button 
               v-if="data.isVolume"
               size="small" 
@@ -195,48 +204,187 @@ const handleContextMenu = (e, data) => {
 
 <style scoped>
 .tree-container {
-  max-height: 500px;
+  max-height: 100%;
   overflow-y: auto;
-  margin: 20px 0;
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
   padding: 10px;
 }
 
 .tree-node-content {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 0;
+  gap: 10px;
 }
 
-.status-tag {
-  margin-right: 8px;
+/* 三行布局容器 */
+.node-content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 第一行：标题行 */
+.node-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .node-index {
-  font-weight: bold;
-  color: #606266;
+  font-weight: 500;
 }
 
 .node-title {
   flex: 1;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-tag {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+/* 第二行：信息行 */
+.node-info-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .node-info {
   color: #909399;
   font-size: 13px;
-  margin-right: 10px;
 }
 
-.node-actions {
+.edited-tag {
+  color: #409EFF;
+  font-size: 12px;
+}
+
+/* 第三行：操作按钮行 */
+.node-actions-row {
   display: flex;
-  gap: 5px;
-  opacity: 0;
-  transition: opacity 0.3s;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.tree-node-content:hover .node-actions {
-  opacity: 1;
+.node-actions-row .el-button {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .tree-container {
+    max-height: none;
+    padding: 10px 15px;
+    overflow-x: hidden;
+  }
+  
+  /* 节点容器样式 */
+  :deep(.el-tree-node) {
+    margin-bottom: 15px;
+    border-radius: 8px;
+    background-color: #fafafa;
+    padding: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .tree-node-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 0;
+  }
+  
+  .node-content-wrapper {
+    gap: 8px;
+  }
+  
+  /* 优化复选框 */
+  :deep(.el-checkbox) {
+    transform: scale(1.3);
+    align-self: flex-start;
+  }
+  
+  /* 第一行：标题行 */
+  .node-title-row {
+    gap: 10px;
+    align-items: flex-start;
+  }
+  
+  .node-index {
+    font-size: 16px;
+    margin-right: 5px;
+  }
+  
+  .node-title {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: normal;
+    overflow: visible;
+  }
+  
+  .status-tag {
+    padding: 3px 10px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  
+  /* 第二行：信息行 */
+  .node-info-row {
+    gap: 15px;
+  }
+  
+  .node-info {
+    font-size: 14px;
+    color: #606266;
+  }
+  
+  .edited-tag {
+    font-size: 14px;
+  }
+  
+  /* 第三行：操作按钮行 */
+  .node-actions-row {
+    justify-content: space-between;
+    gap: 10px;
+  }
+  
+  .node-actions-row .el-button {
+    flex: 1;
+    min-width: calc(33.33% - 7px);
+    padding: 8px 12px;
+    font-size: 14px;
+    margin-bottom: 0;
+  }
+  
+  /* 优化节点内容 */
+  :deep(.el-tree-node__content) {
+    height: auto;
+    padding: 5px 0;
+  }
+  
+  /* 优化树形结构的缩进 */
+  :deep(.el-tree-node__indent) {
+    width: 20px;
+  }
+  
+  /* 优化展开图标 */
+  :deep(.el-tree-node__expand-icon) {
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+  }
 }
 </style>
