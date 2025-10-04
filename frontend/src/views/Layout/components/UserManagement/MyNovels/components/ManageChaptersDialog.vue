@@ -2,150 +2,99 @@
   <el-dialog
     v-model="dialogVisible"
     title="章节管理"
-    width="800px"
-    @close="handleClose"
+    width="900px"
+    :before-close="handleClose"
   >
-    <div v-if="currentNovel" class="chapters-management-container">
-      <div class="novel-info">
-        <h3>{{ currentNovel.title }}</h3>
-        <!-- <p class="novel-description">{{ currentNovel.description }}</p> -->
-      </div>
-      
-      <div class="tree-container">
-        <el-button type="primary" size="small" class="add-volume-btn" @click="handleAddVolume">
-          <el-icon><Plus /></el-icon> 添加卷
-        </el-button>
-        
-        <el-tree
-          :data="chaptersTreeData"
-          node-key="id"
-          default-expand-all
-          :props="defaultProps"
-          @node-click="handleNodeClick"
-        >
-          <template #default="{ node, data }">
-            <div class="tree-node-content">
-              <span>{{ data.name }}</span>
-              <div class="node-actions">
-                <el-button
-                  size="small"
-                  type="primary"
-                  text
-                  @click.stop="handleAddChapter(data)"
-                  v-if="data.type === 'volume'"
-                >
-                  <el-icon><Plus /></el-icon>
-                </el-button>
-                <el-button
-                  size="small"
-                  type="primary"
-                  text
-                  @click.stop="handleEditNode(data)"
-                >
-                  <el-icon><Edit /></el-icon>
-                </el-button>
-                <el-button
-                  size="small"
-                  type="danger"
-                  text
-                  @click.stop="handleDeleteNode(data)"
-                >
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </div>
-            </div>
-          </template>
-        </el-tree>
-      </div>
-      
-      <div class="dialog-footer-actions">
-        <el-button type="primary" @click="handleSave">保存修改</el-button>
+    <div class="novel-info">
+      <h3>{{ novel.title }}</h3>
+      <p class="author">作者: {{ novel.author }}</p>
+    </div>
+    
+    <!-- 批量操作工具栏 -->
+    <div class="toolbar">
+      <el-button type="primary" size="small" @click="handleAddVolume">
+        <el-icon><Plus /></el-icon> 添加卷
+      </el-button>
+      <el-button size="small" @click="handleBatchPublish" :disabled="selectedNodes.length === 0">
+        <el-icon><Check /></el-icon> 批量发布
+      </el-button>
+      <el-button size="small" @click="handleBatchDelete" :disabled="selectedNodes.length === 0" type="danger">
+        <el-icon><Delete /></el-icon> 批量删除
+      </el-button>
+      <div class="search-wrapper">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="搜索章节/卷"
+          size="small"
+          :prefix-icon="Search"
+          @input="handleSearch"
+        />
       </div>
     </div>
     
-    <div v-else class="loading-state">
-      <el-empty description="请选择小说" />
+    <!-- 章节树组件 -->
+    <ChapterTree
+      :treeData="treeData"
+      :searchKeyword="searchKeyword"
+      @node-click="handleNodeClick"
+      @check-change="handleCheckChange"
+      @check="handleCheck"
+      @add-chapter="handleAddChapter"
+      @edit-node="handleEditNode"
+      @publish-chapter="handlePublishChapter"
+      @delete-node="handleDeleteNode"
+      @move-up="handleMoveUp"
+      @move-down="handleMoveDown"
+      @context-menu="handleContextMenu"
+    />
+    
+    <div class="actions">
+      <el-button type="primary" @click="handleSave">保存</el-button>
+      <el-button @click="handleClose">取消</el-button>
     </div>
     
-    <!-- 添加/编辑卷对话框 -->
-    <el-dialog
-      v-model="isVolumeDialogVisible"
-      :title="isEditingVolume ? '编辑卷' : '添加卷'"
-      width="500px"
-    >
-      <el-form :model="volumeForm" label-width="80px">
-        <el-form-item label="卷标题">
-          <el-input v-model="volumeForm.title" placeholder="请输入卷标题" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="isVolumeDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveVolume">保存</el-button>
-      </template>
-    </el-dialog>
+    <!-- 子组件对话框 -->
+    <VolumeDialog
+      v-model:visible="addVolumeDialogVisible"
+      :treeData="treeData"
+      :editData="currentEditNode"
+      @save="handleSaveVolume"
+    />
     
-    <!-- 添加/编辑章节对话框 -->
-    <el-dialog
-      v-model="isChapterDialogVisible"
-      :title="isEditingChapter ? '编辑章节' : '添加章节'"
-      width="700px"
-      height="80vh"
-    >
-      <el-form :model="chapterForm" label-width="80px">
-        <el-form-item label="章节标题">
-          <el-input v-model="chapterForm.title" placeholder="请输入章节标题" />
-        </el-form-item>
-        <el-form-item label="字数">
-          <el-input-number v-model="chapterForm.wordCount" :min="0" placeholder="请输入章节字数" />
-        </el-form-item>
-        <el-form-item label="发布日期">
-          <el-date-picker
-            v-model="chapterForm.publishDate"
-            type="datetime"
-            placeholder="选择日期时间"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="章节内容">
-          <div class="markdown-editor-container">
-            <div class="editor-tabs">
-              <el-radio-group v-model="activeTab" size="small" class="editor-tab-group">
-                <el-radio-button label="编辑">编辑</el-radio-button>
-                <el-radio-button label="预览">预览</el-radio-button>
-              </el-radio-group>
-              <div class="markdown-tips">
-                <el-tooltip content="支持Markdown语法">
-                  <el-button type="text" size="small">
-                    <el-icon><InfoFilled /></el-icon>
-                  </el-button>
-                </el-tooltip>
-              </div>
-            </div>
-            <div v-show="activeTab === '编辑'" class="editor-section">
-              <el-input
-                v-model="chapterForm.content"
-                type="textarea"
-                :rows="15"
-                placeholder="请输入章节内容，支持Markdown语法"
-                class="content-editor"
-              />
-            </div>
-            <div v-show="activeTab === '预览'" class="preview-section" v-html="previewContent"></div>
-          </div>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="isChapterDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSaveChapter">保存</el-button>
-      </template>
-    </el-dialog>
+    <ChapterDialog
+      v-model:visible="addChapterDialogVisible"
+      :treeData="treeData"
+      :editData="currentEditNode"
+      :defaultVolumeId="currentEditVolumeId"
+      @save="handleSaveChapter"
+    />
+    
+    <!-- 右键菜单 -->
+    <ContextMenu
+      :visible="contextMenuVisible"
+      :menuNode="contextMenuNode"
+      :menuStyle="contextMenuStyle"
+      @add-volume="handleAddVolumeFromMenu"
+      @add-chapter="handleAddChapterFromMenu"
+      @edit="handleEditFromMenu"
+      @publish="handlePublishFromMenu"
+      @move-up="handleMoveUpFromMenu"
+      @move-down="handleMoveDownFromMenu"
+      @delete="handleDeleteFromMenu"
+    />
   </el-dialog>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { Plus, Edit, Delete, InfoFilled } from '@element-plus/icons-vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Edit, Delete, Check, Search, Top, Bottom } from '@element-plus/icons-vue'
+
+// 引入子组件
+import ChapterTree from './ChapterTree.vue'
+import VolumeDialog from './VolumeDialog.vue'
+import ChapterDialog from './ChapterDialog.vue'
+import ContextMenu from './ContextMenu.vue'
 
 // Props
 const props = defineProps({
@@ -155,424 +104,474 @@ const props = defineProps({
   },
   novel: {
     type: Object,
-    default: null
+    default: () => ({
+      id: '',
+      title: '',
+      author: '',
+      volumes: []
+    })
   }
-});
+})
 
 // Emits
-const emit = defineEmits(['update:visible', 'save']);
+const emit = defineEmits(['update:visible', 'save'])
 
-// 响应式状态
-const currentNovel = ref(null);
+// 响应式数据
 const dialogVisible = computed({
   get: () => props.visible,
-  set: (value) => emit('update:visible', value)
-});
+  set: (val) => emit('update:visible', val)
+})
 
-// 添加/编辑对话框控制
-const isVolumeDialogVisible = ref(false);
-const isChapterDialogVisible = ref(false);
-const isEditingVolume = ref(false);
-const isEditingChapter = ref(false);
-const currentEditingNode = ref(null);
-const currentParentVolume = ref(null);
+const treeData = ref([])
 
-// Markdown编辑器相关
-const activeTab = ref('编辑');
+// 搜索相关
+const searchKeyword = ref('')
 
-// 表单数据
-const volumeForm = ref({
-  title: ''
-});
+// 对话框相关
+const addVolumeDialogVisible = ref(false)
+const addChapterDialogVisible = ref(false)
 
-const chapterForm = ref({
-  title: '',
-  wordCount: 0,
-  publishDate: new Date(),
-  content: ''
-});
+// 当前编辑的节点信息
+const currentEditNode = ref(null)
+const currentEditVolumeId = ref(null)
 
-// 树形结构配置
-const defaultProps = {
-  children: 'children',
-  label: 'name'
-};
+// 多选功能
+const selectedNodes = ref([])
+const checkNodeKeys = ref([])
 
-// 计算属性：将卷和章节数据转换为树形结构
-const chaptersTreeData = computed(() => {
-  if (!currentNovel.value || !currentNovel.value.volumes) {
-    currentNovel.value.volumes = [];
-    return [];
+// 右键菜单
+const contextMenuVisible = ref(false)
+const contextMenuNode = ref(null)
+const contextMenuStyle = ref({ top: '0px', left: '0px' })
+
+// 初始化树形数据
+const initTreeData = () => {
+  if (props.novel && props.novel.volumes) {
+    treeData.value = JSON.parse(JSON.stringify(props.novel.volumes))
+    // 确保每个节点都有必要的属性
+    treeData.value.forEach(volume => {
+      volume.isVolume = true
+      if (!volume.chapters) volume.chapters = []
+      volume.chapters.forEach(chapter => {
+        chapter.isVolume = false
+        if (!chapter.status) chapter.status = 'draft'
+      })
+    })
+  } else {
+    treeData.value = []
   }
-  
-  return currentNovel.value.volumes.map(volume => ({
-    id: volume.id,
-    name: volume.title,
-    type: 'volume',
-    children: volume.chapters ? volume.chapters.map(chapter => ({
-      id: chapter.id,
-      name: chapter.title,
-      type: 'chapter',
-      wordCount: chapter.wordCount,
-      publishDate: chapter.publishDate
-    })) : []
-  }));
-});
+  selectedNodes.value = []
+  checkNodeKeys.value = []
+}
 
-// 简单的Markdown预览（基础实现）
-const previewContent = computed(() => {
-  if (!chapterForm.value.content) return '';
-  
-  let html = chapterForm.value.content;
-  
-  // 简单的Markdown转换
-  // 标题
-  html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
-  html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
-  html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
-  
-  // 加粗
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  
-  // 斜体
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  
-  // 段落
-  html = html.replace(/^(?!<h|>).*$/gm, '<p>$&</p>');
-  
-  // 换行
-  html = html.replace(/\n/g, '<br>');
-  
-  return html;
-});
-
-// 生成唯一ID
-const generateId = (prefix) => {
-  return prefix + Date.now() + Math.floor(Math.random() * 1000);
-};
-
-// 监听小说数据变化
-watch(() => props.novel, (newNovel) => {
-  if (newNovel) {
-    // 深拷贝，避免直接修改props
-    currentNovel.value = JSON.parse(JSON.stringify(newNovel));
+// 监听visible变化
+watch(() => props.visible, (newVal) => {
+  if (newVal) {
+    initTreeData()
   }
-}, { immediate: true });
+})
 
-// 方法
+// 关闭对话框
 const handleClose = () => {
-  emit('update:visible', false);
-};
+  dialogVisible.value = false
+  // 关闭右键菜单
+  contextMenuVisible.value = false
+}
 
+// 节点点击事件
 const handleNodeClick = (data) => {
-  console.log('点击了节点:', data);
-  // 如果是章节，可以实现章节内容编辑的功能
-};
+  // 可以在这里添加节点点击后的操作
+}
+
+// 搜索功能
+const handleSearch = () => {
+  // 搜索逻辑已在ChapterTree组件中实现
+}
+
+// 右键菜单事件
+const handleContextMenu = ({ event, data }) => {
+  contextMenuNode.value = data
+  contextMenuStyle.value = {
+    top: `${event.clientY}px`,
+    left: `${event.clientX}px`
+  }
+  contextMenuVisible.value = true
+}
+
+// 关闭右键菜单
+const closeContextMenu = () => {
+  contextMenuVisible.value = false
+  contextMenuNode.value = null
+}
+
+// 多选功能
+const handleCheckChange = (data, checked, indeterminate) => {
+  if (checked) {
+    selectedNodes.value.push(data)
+  } else {
+    const index = selectedNodes.value.findIndex(node => node.id === data.id)
+    if (index > -1) {
+      selectedNodes.value.splice(index, 1)
+    }
+  }
+}
+
+const handleCheck = (data, node) => {
+  // 多选逻辑可以在这里进一步处理
+}
 
 // 添加卷
 const handleAddVolume = () => {
-  isEditingVolume.value = false;
-  volumeForm.value = { title: '' };
-  isVolumeDialogVisible.value = true;
-};
+  currentEditNode.value = null
+  addVolumeDialogVisible.value = true
+}
+
+// 从右键菜单添加卷
+const handleAddVolumeFromMenu = () => {
+  closeContextMenu()
+  handleAddVolume()
+}
+
+// 保存卷
+const handleSaveVolume = (volumeData) => {
+  if (volumeData.sortOrder === 0 || volumeData.sortOrder > treeData.value.length) {
+    // 添加到末尾
+    treeData.value.push(volumeData)
+  } else {
+    // 插入到指定位置
+    treeData.value.splice(volumeData.sortOrder - 1, 0, volumeData)
+  }
+}
 
 // 添加章节
-const handleAddChapter = (parentVolume) => {
-  currentParentVolume.value = parentVolume;
-  isEditingChapter.value = false;
-  chapterForm.value = {
-    title: '',
-    wordCount: 0,
-    publishDate: new Date(),
-    content: ''
-  };
-  activeTab.value = '编辑';
-  isChapterDialogVisible.value = true;
-};
+const handleAddChapter = (volume) => {
+  currentEditNode.value = null
+  currentEditVolumeId.value = volume.id
+  addChapterDialogVisible.value = true
+}
+
+// 从右键菜单添加章节
+const handleAddChapterFromMenu = (volume) => {
+  closeContextMenu()
+  handleAddChapter(volume)
+}
 
 // 编辑节点
 const handleEditNode = (data) => {
-  if (data.type === 'volume') {
-    // 编辑卷
-    isEditingVolume.value = true;
-    currentEditingNode.value = data;
-    volumeForm.value = { title: data.name };
-    isVolumeDialogVisible.value = true;
+  currentEditNode.value = data
+  if (data.isVolume) {
+    addVolumeDialogVisible.value = true
   } else {
-    // 编辑章节
-    isEditingChapter.value = true;
-    currentEditingNode.value = data;
-    
-    // 查找完整的章节数据
-    let chapterData = null;
-    for (const volume of currentNovel.value.volumes) {
-      if (volume.chapters) {
-        chapterData = volume.chapters.find(c => c.id === data.id);
-        if (chapterData) break;
-      }
-    }
-    
-    chapterForm.value = {
-      title: data.name,
-      wordCount: data.wordCount || 0,
-      publishDate: data.publishDate ? new Date(data.publishDate) : new Date(),
-      content: chapterData?.content || ''
-    };
-    activeTab.value = '编辑';
-    isChapterDialogVisible.value = true;
+    addChapterDialogVisible.value = true
   }
-};
+  closeContextMenu()
+}
 
-// 保存卷
-const handleSaveVolume = () => {
-  if (!volumeForm.value.title.trim()) {
-    ElMessage.warning('请输入卷标题');
-    return;
-  }
-  
-  if (isEditingVolume.value) {
-    // 更新现有卷
-    const volume = currentNovel.value.volumes.find(v => v.id === currentEditingNode.value.id);
-    if (volume) {
-      volume.title = volumeForm.value.title;
-    }
-    ElMessage.success('卷信息更新成功');
-  } else {
-    // 添加新卷
-    const newVolume = {
-      id: generateId('VOL'),
-      title: volumeForm.value.title,
-      chapters: []
-    };
-    currentNovel.value.volumes.push(newVolume);
-    ElMessage.success('卷添加成功');
-  }
-  
-  isVolumeDialogVisible.value = false;
-};
+// 从右键菜单编辑
+const handleEditFromMenu = (data) => {
+  closeContextMenu()
+  handleEditNode(data)
+}
 
 // 保存章节
-const handleSaveChapter = () => {
-  if (!chapterForm.value.title.trim()) {
-    ElMessage.warning('请输入章节标题');
-    return;
-  }
-  
-  if (!chapterForm.value.content.trim()) {
-    ElMessage.warning('请输入章节内容');
-    return;
-  }
-  
-  // 自动计算字数
-  const contentText = chapterForm.value.content.replace(/\n/g, '');
-  chapterForm.value.wordCount = contentText.length;
-  
-  if (isEditingChapter.value) {
-    // 更新现有章节
-    for (const volume of currentNovel.value.volumes) {
-      const chapter = volume.chapters.find(c => c.id === currentEditingNode.value.id);
-      if (chapter) {
-        chapter.title = chapterForm.value.title;
-        chapter.wordCount = chapterForm.value.wordCount;
-        chapter.publishDate = chapterForm.value.publishDate ? chapterForm.value.publishDate.toLocaleString('zh-CN').replace(/\//g, '-') : new Date().toLocaleString('zh-CN').replace(/\//g, '-');
-        chapter.content = chapterForm.value.content;
-        break;
+const handleSaveChapter = (chapterData) => {
+  if (chapterData.id) {
+    // 编辑章节
+    for (let volume of treeData.value) {
+      const chapterIndex = volume.chapters.findIndex(c => c.id === chapterData.id)
+      if (chapterIndex > -1) {
+        // 如果卷改变了，需要从原卷移除并添加到新卷
+        if (volume.id !== chapterData.volumeId) {
+          const chapterToMove = volume.chapters.splice(chapterIndex, 1)[0]
+          const newVolume = treeData.value.find(v => v.id === chapterData.volumeId)
+          if (newVolume) {
+            newVolume.chapters.push({ ...chapterToMove, ...chapterData })
+          }
+        } else {
+          // 否则直接更新
+          volume.chapters[chapterIndex] = {
+            ...volume.chapters[chapterIndex],
+            ...chapterData
+          }
+        }
+        break
       }
     }
-    ElMessage.success('章节信息更新成功');
   } else {
-    // 添加新章节
-    const volume = currentNovel.value.volumes.find(v => v.id === currentParentVolume.value.id);
+    // 添加章节
+    const volume = treeData.value.find(v => v.id === currentEditVolumeId.value)
     if (volume) {
-      const newChapter = {
-        id: generateId('CH'),
-        title: chapterForm.value.title,
-        wordCount: chapterForm.value.wordCount,
-        publishDate: chapterForm.value.publishDate ? chapterForm.value.publishDate.toLocaleString('zh-CN').replace(/\//g, '-') : new Date().toLocaleString('zh-CN').replace(/\//g, '-'),
-        content: chapterForm.value.content
-      };
-      if (!volume.chapters) {
-        volume.chapters = [];
-      }
-      volume.chapters.push(newChapter);
-      ElMessage.success('章节添加成功');
+      volume.chapters.push(chapterData)
     }
   }
-  
-  isChapterDialogVisible.value = false;
-};
+}
 
 // 删除节点
-const handleDeleteNode = (data) => {
-  ElMessageBox.confirm(
-    `确定要删除${data.type === 'volume' ? '卷' : '章节'}「${data.name}」吗？此操作不可恢复。`,
-    '警告',
-    {
-      confirmButtonText: '确定删除',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  )
-    .then(() => {
-      if (data.type === 'volume') {
+const handleDeleteNode = async (data) => {
+  try {
+    const result = await ElMessageBox.confirm(
+      `确定要删除${data.isVolume ? '卷' : '章节'}「${data.title}」吗？`,
+      '确认删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    if (result === 'confirm') {
+      if (data.isVolume) {
         // 删除卷
-        currentNovel.value.volumes = currentNovel.value.volumes.filter(v => v.id !== data.id);
+        const volumeIndex = treeData.value.findIndex(v => v.id === data.id)
+        if (volumeIndex > -1) {
+          treeData.value.splice(volumeIndex, 1)
+        }
       } else {
         // 删除章节
-        for (const volume of currentNovel.value.volumes) {
-          if (volume.chapters) {
-            volume.chapters = volume.chapters.filter(c => c.id !== data.id);
+        for (let volume of treeData.value) {
+          const chapterIndex = volume.chapters.findIndex(c => c.id === data.id)
+          if (chapterIndex > -1) {
+            volume.chapters.splice(chapterIndex, 1)
+            break
           }
         }
       }
-      ElMessage.success('删除成功');
-    })
-    .catch(() => {
-      ElMessage.info('已取消删除');
-    });
-};
+      ElMessage.success('删除成功')
+      
+      // 从选中列表中移除
+      const index = selectedNodes.value.findIndex(node => node.id === data.id)
+      if (index > -1) {
+        selectedNodes.value.splice(index, 1)
+      }
+    }
+  } catch (error) {
+    // 用户取消删除
+  }
+}
 
+// 从右键菜单删除
+const handleDeleteFromMenu = (data) => {
+  closeContextMenu()
+  handleDeleteNode(data)
+}
+
+// 发布章节
+const handlePublishChapter = async (data) => {
+  try {
+    const result = await ElMessageBox.confirm(
+      `确定要发布章节「${data.title}」吗？`,
+      '确认发布',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    )
+    
+    if (result === 'confirm') {
+      data.status = 'published'
+      ElMessage.success('章节发布成功')
+    }
+  } catch (error) {
+    // 用户取消发布
+  }
+}
+
+// 从右键菜单发布
+const handlePublishFromMenu = (data) => {
+  closeContextMenu()
+  handlePublishChapter(data)
+}
+
+// 批量发布
+const handleBatchPublish = async () => {
+  try {
+    const chaptersToPublish = selectedNodes.value.filter(node => !node.isVolume)
+    if (chaptersToPublish.length === 0) {
+      ElMessage.warning('请选择要发布的章节')
+      return
+    }
+    
+    const result = await ElMessageBox.confirm(
+      `确定要发布选中的${chaptersToPublish.length}个章节吗？`,
+      '批量发布',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    )
+    
+    if (result === 'confirm') {
+      chaptersToPublish.forEach(chapter => {
+        chapter.status = 'published'
+      })
+      ElMessage.success(`成功发布${chaptersToPublish.length}个章节`)
+    }
+  } catch (error) {
+    // 用户取消发布
+  }
+}
+
+// 批量删除
+const handleBatchDelete = async () => {
+  try {
+    if (selectedNodes.value.length === 0) {
+      ElMessage.warning('请选择要删除的项目')
+      return
+    }
+    
+    const volumesCount = selectedNodes.value.filter(node => node.isVolume).length
+    const chaptersCount = selectedNodes.value.length - volumesCount
+    
+    const result = await ElMessageBox.confirm(
+      `确定要删除选中的${volumesCount}个卷和${chaptersCount}个章节吗？`,
+      '批量删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    if (result === 'confirm') {
+      // 删除卷
+      selectedNodes.value.forEach(node => {
+        if (node.isVolume) {
+          const volumeIndex = treeData.value.findIndex(v => v.id === node.id)
+          if (volumeIndex > -1) {
+            treeData.value.splice(volumeIndex, 1)
+          }
+        } else {
+          // 删除章节
+          for (let volume of treeData.value) {
+            const chapterIndex = volume.chapters.findIndex(c => c.id === node.id)
+            if (chapterIndex > -1) {
+              volume.chapters.splice(chapterIndex, 1)
+              break
+            }
+          }
+        }
+      })
+      
+      ElMessage.success(`成功删除${volumesCount}个卷和${chaptersCount}个章节`)
+      selectedNodes.value = []
+      checkNodeKeys.value = []
+    }
+  } catch (error) {
+    // 用户取消删除
+  }
+}
+
+// 章节上移
+const handleMoveUp = (data, node) => {
+  for (const volume of treeData.value) {
+    const chapterIndex = volume.chapters.findIndex(c => c.id === data.id)
+    if (chapterIndex > 0) {
+      // 交换位置
+      const temp = volume.chapters[chapterIndex - 1]
+      volume.chapters[chapterIndex - 1] = volume.chapters[chapterIndex]
+      volume.chapters[chapterIndex] = temp
+      ElMessage.success('章节已上移')
+      break
+    }
+  }
+}
+
+// 从右键菜单上移
+const handleMoveUpFromMenu = (data) => {
+  closeContextMenu()
+  handleMoveUp(data)
+}
+
+// 章节下移
+const handleMoveDown = (data, node) => {
+  for (const volume of treeData.value) {
+    const chapterIndex = volume.chapters.findIndex(c => c.id === data.id)
+    if (chapterIndex > -1 && chapterIndex < volume.chapters.length - 1) {
+      // 交换位置
+      const temp = volume.chapters[chapterIndex + 1]
+      volume.chapters[chapterIndex + 1] = volume.chapters[chapterIndex]
+      volume.chapters[chapterIndex] = temp
+      ElMessage.success('章节已下移')
+      break
+    }
+  }
+}
+
+// 从右键菜单下移
+const handleMoveDownFromMenu = (data) => {
+  closeContextMenu()
+  handleMoveDown(data)
+}
+
+// 保存所有更改
 const handleSave = () => {
-  // 保存修改并通知父组件
-  emit('save', currentNovel.value);
-  emit('update:visible', false);
-};
+  // 传递更新后的数据给父组件
+  emit('save', {
+    ...props.novel,
+    volumes: treeData.value
+  })
+  handleClose()
+}
+
+// 全局点击事件监听，用于关闭右键菜单
+const handleGlobalClick = () => {
+  if (contextMenuVisible.value) {
+    closeContextMenu()
+  }
+}
+
+// 组件挂载时监听visible变化和全局点击事件
+onMounted(() => {
+  initTreeData()
+  document.addEventListener('click', handleGlobalClick)
+})
+
+// 组件卸载时清理
+onUnmounted(() => {
+  document.removeEventListener('click', handleGlobalClick)
+})
 </script>
 
 <style scoped>
-.chapters-management-container {
-  height: 500px;
-  display: flex;
-  flex-direction: column;
-}
-
 .novel-info {
   margin-bottom: 20px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid #eee;
 }
 
 .novel-info h3 {
   margin: 0 0 10px 0;
-  font-size: 18px;
 }
 
-.tree-container {
-  flex: 1;
-  overflow-y: auto;
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
-  padding: 10px;
+.novel-info .author {
+  margin: 0;
+  color: #606266;
 }
 
-.add-volume-btn {
-  margin-bottom: 10px;
-}
-
-.tree-node-content {
+.toolbar {
   display: flex;
-  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 15px;
   align-items: center;
-  width: 100%;
 }
 
-.node-actions {
-  display: flex;
-  gap: 5px;
-  opacity: 0;
-  transition: opacity 0.3s;
+.search-wrapper {
+  margin-left: auto;
+  width: 300px;
 }
 
-.tree-node-content:hover .node-actions {
-  opacity: 1;
-}
-
-.dialog-footer-actions {
-  margin-top: 20px;
+.actions {
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
 }
 
-.loading-state {
-  height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Markdown编辑器样式 */
-.markdown-editor-container {
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.editor-tabs {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 10px;
-  background-color: #f5f7fa;
-  border-bottom: 1px solid #dcdfe6;
-}
-
-.editor-tab-group {
-  margin: 5px 0;
-}
-
-.markdown-tips {
-  display: flex;
-  align-items: center;
-}
-
-.editor-section, .preview-section {
-  padding: 15px;
-  min-height: 300px;
-}
-
-.content-editor {
-  resize: vertical;
-  min-height: 300px;
-  font-family: Monaco, Menlo, Consolas, 'Courier New', monospace;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.preview-section {
-  background-color: #fafafa;
-  line-height: 1.8;
-  white-space: pre-wrap;
-}
-
-.preview-section h1 {
-  font-size: 24px;
-  margin: 20px 0 10px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #eaecef;
-}
-
-.preview-section h2 {
-  font-size: 20px;
-  margin: 18px 0 8px 0;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #eaecef;
-}
-
-.preview-section h3 {
-  font-size: 18px;
-  margin: 15px 0 5px 0;
-}
-
-.preview-section p {
-  margin: 10px 0;
-}
-
-.preview-section strong {
-  font-weight: bold;
-  color: #303133;
-}
-
-.preview-section em {
-  font-style: italic;
+/* 确保对话框内容不会溢出 */
+:deep(.el-dialog__body) {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
 }
 </style>
